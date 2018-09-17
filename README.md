@@ -9,4 +9,14 @@ hbv@inf.elte.hu
 
 os szerveren kell dolgozni és bemutatni
 
+### rsync for copy and append files
+
+```bash
+
+```
+### vim quickcompile and run on os
+
+```vim
+:!gcc -o a % && ./a
+```
 
