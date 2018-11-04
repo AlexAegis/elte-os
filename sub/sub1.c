@@ -149,7 +149,7 @@ int create(struct order *o)
 	fclose(file);
 }
 
-int delete_line(int lno)
+int delete (struct order *filter_obj)
 {
 	int ctr = 0;
 	char ch;
@@ -173,10 +173,40 @@ int delete_line(int lno)
 		fgets(str, 255, fptr1);
 		if (!feof(fptr1))
 		{
-			ctr++;
-			if (ctr != lno)
+			printf("LINE %s\n", str);
+			char line[255];
+			strcpy(line, str);
+
+			struct order a = interpret_line(str);
+			printf("LINE AGAIN %s\n", line);
+			int match = 1;
+			if (filter_obj != NULL)
 			{
-				fprintf(fptr2, "%s", str);
+
+				int matches_by_id = 1;
+				if (filter_obj->id >= 0 && filter_obj->id == a.id)
+				{
+					matches_by_id = 0;
+					printf("no match by id\n");
+				}
+				int matches_by_name = 1;
+				if (filter_obj->name[0] != '\0' && strcmp(filter_obj->name, a.name) != 0)
+				{
+					matches_by_name = 0;
+					printf("no match by name, compared: %s, and %s \n", filter_obj->name, a.name);
+				}
+
+				if (matches_by_id != 1 || matches_by_name != 1)
+				{
+					match = 0;
+				}
+			}
+			// asdasda
+			ctr++;
+			if (match != 1)
+			{
+				printf("MAYA HEEE %s", line);
+				fprintf(fptr2, "%s", line);
 			}
 		}
 	}
@@ -237,7 +267,10 @@ int main()
 
 	// DELETE
 
-	delete_line(1);
+	struct order filter_obj;
+	filter_obj.id = -1;
+	strcpy(filter_obj.name, "numa");
+	delete (&filter_obj);
 
 	/*
 	printf("size of: %d", LENGTH(data));
