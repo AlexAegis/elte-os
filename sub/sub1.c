@@ -216,16 +216,35 @@ void print_order(struct order *o)
 
 struct order *read_order()
 {
+	char buffer[255];
 	struct order *result = malloc(sizeof(struct order));
 	result->id = -1;
+	printf("Enter an order. ('-' to ignore field):\n");
 	printf("name:");
-	scanf("%s", result->name);
+	scanf("%s", buffer);
+	if (strcmp(buffer, "-") != 0)
+	{
+		strcpy(result->name, buffer);
+	}
+
 	printf("email:");
-	scanf("%s", result->email);
+	scanf("%s", buffer);
+	if (strcmp(buffer, "-") != 0)
+	{
+		strcpy(result->email, buffer);
+	}
 	printf("phone:");
-	scanf("%s", result->phone);
+	scanf("%s", buffer);
+	if (strcmp(buffer, "-") != 0)
+	{
+		strcpy(result->phone, buffer);
+	}
 	printf("perf:");
-	scanf("%s", result->perf);
+	scanf("%s", buffer);
+	if (strcmp(buffer, "-") != 0)
+	{
+		strcpy(result->perf, buffer);
+	}
 	result->time = time(NULL);
 	return result;
 }
