@@ -235,7 +235,7 @@ int main()
 	char menu_option;
 	do
 	{
-		printf("--Mészáros és Mészáros Benzines Napelem Kft.-- \n\n Jellemzően egy évre vonatkoztatva 1000KWh energiát 1KW teljesítményt nyújtó 4 darab napelem panel ad.\n\n");
+		printf("\n\n--Mészáros és Mészáros Benzines Napelem Kft.-- \n\n Jellemzően egy évre vonatkoztatva 1000KWh energiát 1KW teljesítményt nyújtó 4 darab napelem panel ad.\n\n");
 		printf("0. List (All)\n");
 		printf("1. Create\n");
 		printf("2. Read (Filter)\n");
@@ -276,7 +276,7 @@ int main()
 			int _read_i = 0;
 			while (_read_i < *_read_count)
 			{
-				struct order *_read_r = &_read_result[_i];
+				struct order *_read_r = &_read_result[_read_i];
 				print_order(_read_r);
 				_read_i++;
 			};
