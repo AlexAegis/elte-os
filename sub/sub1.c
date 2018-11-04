@@ -34,6 +34,15 @@ struct order interpret_line(char *line)
 			strcpy(result.name, pt);
 			break;
 		case 2:
+			strcpy(result.email, pt);
+			break;
+		case 3:
+			strcpy(result.phone, pt);
+			break;
+		case 4:
+			strcpy(result.perf, pt);
+			break;
+		case 5:
 			result.time = time(NULL);
 			break;
 		}
@@ -111,7 +120,7 @@ struct order *filter(struct order *filter_obj, int *size, int here)
 int create(struct order *o)
 {
 	FILE *file = fopen("data.txt", "a");
-	fprintf(file, "%d,%s,%s\n", o->id, &o->name, ctime(&o->time));
+	fprintf(file, "%d,%s,%s,%s,%s,%s}\n", o->id, &o->name, &o->email, &o->phone, &o->perf, ctime(&o->time));
 	fclose(file);
 }
 
@@ -223,54 +232,6 @@ struct order *read_order()
 
 int main()
 {
-
-	// CREATE - Write to file
-	// create(&example);
-
-	// READ - With filter
-	/*
-	struct order *filter_obj = read_order();
-	//filter_obj.id = -1;
-	//strcpy(filter_obj.name, "numa");
-
-	int c = -1;
-	int *count = &c;
-	struct order *result = filter(filter_obj, count, -1);
-	printf("RETURNED RES SIZE FOR FILTER: %d\n", *count);
-	int i = 0;
-	while (i < *count)
-	{
-		printf("READ THE FILTERED RESULT %d\n", i);
-		struct order *r = &result[i];
-		printf("RETURNED RES: %d\n", r->id);
-		i++;
-	}
-*/
-	// READ - Without filter (read all)
-	/*
-	
-*/
-
-	// DELETE
-	/*
-	struct order filter_obj;
-	filter_obj.id = -1;
-	strcpy(filter_obj.name, "numa");
-	delete (&filter_obj);
-*/
-	// UPDATE
-	/*
-	struct order filter_obj;
-	filter_obj.id = -1;
-	strcpy(filter_obj.name, "numa");
-
-	struct order update_obj;
-	update_obj.id = -1;
-	strcpy(update_obj.name, "hello");
-
-	update(&filter_obj, &update_obj);
-*/
-
 	char menu_option;
 	do
 	{
@@ -298,9 +259,12 @@ int main()
 			break;
 		case '1':
 			printf("1 - CREATE MODE\n");
+			printf("enter order data\n");
+			create(read_order());
 			break;
 		case '2':
 			printf("2 - READ MODE\n");
+			printf("enter read filter\n");
 			struct order *_read_filter = read_order();
 			// print_order(_read_filter);
 
@@ -314,6 +278,24 @@ int main()
 				print_order(_read_r);
 				_read_i++;
 			};
+
+			break;
+		case '3':
+			printf("3 - UPDATE MODE\n");
+			printf("enter update filter\n");
+			struct order *_update_filter = read_order();
+			printf("enter replace\n");
+			struct order *_update_replace = read_order();
+
+			update(_update_filter, _update_replace);
+
+			break;
+		case '4':
+			printf("4 - DELETE MODE\n");
+			printf("enter delete filter\n");
+			struct order *_delete_filter = read_order();
+
+			delete (_delete_filter);
 
 			break;
 		case 'q':
