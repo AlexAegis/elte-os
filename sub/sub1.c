@@ -87,8 +87,23 @@ struct order *filter(struct order *filter_obj, int *size, int here)
 			{
 				matches_by_name = 0;
 			}
+			int matches_by_email = 1;
+			if (filter_obj->email[0] != '\0' && strcmp(filter_obj->email, a.email) != 0)
+			{
+				matches_by_email = 0;
+			}
+			int matches_by_phone = 1;
+			if (filter_obj->phone[0] != '\0' && strcmp(filter_obj->phone, a.phone) != 0)
+			{
+				matches_by_phone = 0;
+			}
+			int matches_by_perf = 1;
+			if (filter_obj->perf[0] != '\0' && strcmp(filter_obj->perf, a.perf) != 0)
+			{
+				matches_by_perf = 0;
+			}
 
-			if (matches_by_id != 1 || matches_by_name != 1)
+			if (matches_by_id != 1 || matches_by_name != 1 || matches_by_email != 1 || matches_by_phone != 1 || matches_by_perf != 1)
 			{
 				match = 0;
 			}
@@ -172,7 +187,6 @@ int update(struct order *filter_obj, struct order *update_obj)
 					match = 0;
 				}
 			}
-			// asdasda
 			ctr++;
 			if (match != 1)
 			{
@@ -192,8 +206,19 @@ int update(struct order *filter_obj, struct order *update_obj)
 					{
 						a.name[0] = update_obj->name[0];
 					}
-
-					fprintf(fptr2, "%d,%s,%s", a.id, a.name, ctime(&a.time));
+					if (update_obj->email[0] != '\0')
+					{
+						a.email[0] = update_obj->email[0];
+					}
+					if (update_obj->phone[0] != '\0')
+					{
+						a.phone[0] = update_obj->phone[0];
+					}
+					if (update_obj->perf[0] != '\0')
+					{
+						a.perf[0] = update_obj->perf[0];
+					}
+					fprintf(fptr2, "%d,%s,%s,%s,%s,%s}\n", a.id, a.name, a.email, a.phone, a.perf, ctime(&a.time));
 				}
 			}
 		}
