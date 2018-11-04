@@ -39,7 +39,7 @@ struct order interpret_line(char *line)
 			result.id = atoi(pt);
 			break;
 		case 1:
-			//result.name = pt;
+			strcpy(result.name, pt);
 			break;
 		}
 		//}
@@ -52,28 +52,52 @@ struct order interpret_line(char *line)
 	return result;
 }
 
-struct order *read(int p)
+int filter(struct order *filter_obj, struct order *res)
 {
 
-	struct order *result = NULL;
 	FILE *file = fopen("data.txt", "r");
 	char *line = NULL;
 	size_t len = 0;
 	ssize_t read;
 
 	int found = 0;
-	while ((read = getline(&line, &len, file)) != -1 && result == NULL)
+	while ((read = getline(&line, &len, file)) != -1)
 	{
 		//printf("Retrieved line of length %zu :\n", read);
 		printf("Line: %s\n", line);
 		struct order a = interpret_line(line);
-		if (p == a.id)
+		printf("Your filter: %d, %s\n", filter_obj->id, filter_obj->name);
+		int matches_by_id = 1;
+		if (filter_obj->id >= 0 && filter_obj->id == a.id)
 		{
-			result = &a;
+			matches_by_id = 0;
+			printf("no match by id\n");
 		}
-		printf("interpreted order: %d\n", a.id);
+		int matches_by_name = 1;
+		if (filter_obj->name[0] != '\0' && strcmp(filter_obj->name, a.name) != 0)
+		{
+			matches_by_name = 0;
+			printf("no match by name, compared: %s, and %s \n", filter_obj->name, a.name);
+		}
+
+		if (matches_by_id == 1 && matches_by_name == 1)
+		{
+			printf("Found order: %d\n", a.id);
+			if (res != NULL)
+			{
+				res[found] = a;
+			}
+			found = found + 1;
+		}
 	}
-	return result;
+	fclose(file);
+	if (res == NULL)
+	{
+		struct order *result = malloc(found * sizeof(int));
+		return filter(filter_obj, result);
+	}
+
+	return found;
 }
 
 int create(struct order *o)
@@ -93,11 +117,25 @@ int main()
 	strcpy(example.name, "NAAAAME");
 	example.time = time(NULL);
 
+	// CREATE - Write to file
 	// create(&example);
 
-	read(0);
+	// READ - Write to file
+	struct order filter_obj;
+	filter_obj.id = -1;
+	strcpy(filter_obj.name, "numa");
+	struct order *result;
+	int count = filter(&filter_obj, result);
+	printf("RETURNED RES SIZE: %d\n", count);
+	int i;
+	while (i < count)
+	{
+		struct order *r = &result[i];
+		printf("RETURNED RES: %d\n", r->id);
+		i++;
+	}
 
-	read(1);
+	//read(1);
 
 	/*
 	printf("size of: %d", LENGTH(data));
