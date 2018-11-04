@@ -149,6 +149,43 @@ int create(struct order *o)
 	fclose(file);
 }
 
+int delete_line(int lno)
+{
+	int ctr = 0;
+	char ch;
+	FILE *fptr1, *fptr2;
+	char str[255], temp[] = "temp.txt";
+
+	fptr1 = fopen("data.txt", "r");
+	if (!fptr1)
+	{
+		return 0;
+	}
+	fptr2 = fopen(temp, "w");
+	if (!fptr2)
+	{
+		fclose(fptr1);
+		return 0;
+	}
+	while (!feof(fptr1))
+	{
+		strcpy(str, "\0");
+		fgets(str, 255, fptr1);
+		if (!feof(fptr1))
+		{
+			ctr++;
+			if (ctr != lno)
+			{
+				fprintf(fptr2, "%s", str);
+			}
+		}
+	}
+	fclose(fptr1);
+	fclose(fptr2);
+	remove("data.txt");
+	rename(temp, "data.txt");
+}
+
 int main()
 {
 	struct order data[100];
@@ -162,7 +199,7 @@ int main()
 	// create(&example);
 
 	// READ - With filter
-
+	/*
 	struct order filter_obj;
 	filter_obj.id = -1;
 	strcpy(filter_obj.name, "numa");
@@ -178,9 +215,9 @@ int main()
 		printf("RETURNED RES: %d\n", r->id);
 		i++;
 	}
-
+*/
 	// READ - Without filter (read all)
-
+	/*
 	printf("READ - Without filter (read all)\n");
 
 	int _c = -1;
@@ -196,6 +233,11 @@ int main()
 		printf("RETURNED RES: id: %d name: %s\n", _r->id, _r->name);
 		_i++;
 	};
+*/
+
+	// DELETE
+
+	delete_line(1);
 
 	/*
 	printf("size of: %d", LENGTH(data));
