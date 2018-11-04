@@ -83,22 +83,22 @@ struct order *filter(struct order *filter_obj, int *size, int here)
 				matches_by_id = 0;
 			}
 			int matches_by_name = 1;
-			if (filter_obj->name[0] != '\0' && strcmp(filter_obj->name, a.name) != 0)
+			if (filter_obj->name[0] != '\0' && !strstr(a.name, filter_obj->name))
 			{
 				matches_by_name = 0;
 			}
 			int matches_by_email = 1;
-			if (filter_obj->email[0] != '\0' && strcmp(filter_obj->email, a.email) != 0)
+			if (filter_obj->email[0] != '\0' && !strstr(a.email, filter_obj->email))
 			{
 				matches_by_email = 0;
 			}
 			int matches_by_phone = 1;
-			if (filter_obj->phone[0] != '\0' && strcmp(filter_obj->phone, a.phone) != 0)
+			if (filter_obj->phone[0] != '\0' && !strstr(a.phone, filter_obj->phone))
 			{
 				matches_by_phone = 0;
 			}
 			int matches_by_perf = 1;
-			if (filter_obj->perf[0] != '\0' && strcmp(filter_obj->perf, a.perf) != 0)
+			if (filter_obj->perf[0] != '\0' && !strstr(a.perf, filter_obj->perf))
 			{
 				matches_by_perf = 0;
 			}
