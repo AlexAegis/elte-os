@@ -14,6 +14,13 @@ struct order
 	time_t time;
 };
 
+// array pointer and the size of that
+struct arrs
+{
+	int pt;
+	int s;
+};
+
 int list(struct order *data, int size)
 {
 	return 0;
@@ -52,52 +59,87 @@ struct order interpret_line(char *line)
 	return result;
 }
 
-int filter(struct order *filter_obj, struct order *res)
+struct order *filter(struct order *filter_obj, int *size, int here)
 {
+	if (filter_obj == NULL)
+	{
+		printf("You ahve no filter, list all");
+	}
+	else
+	{
+		printf("Your filter: %d, %s\n", filter_obj->id, filter_obj->name);
+	}
 
 	FILE *file = fopen("data.txt", "r");
 	char *line = NULL;
 	size_t len = 0;
 	ssize_t read;
 
+	struct order *res = NULL;
+
+	if (here > 0)
+	{
+		res = malloc(here * sizeof(struct order));
+
+		printf("MALLOC HAPPENED!!!!here:  %d size: %d\n", here, *size);
+	}
+
+	*size = here;
+	printf("size ASSIGNED!!!!here:  %d size: %d\n", here, *size);
+
 	int found = 0;
 	while ((read = getline(&line, &len, file)) != -1)
 	{
 		//printf("Retrieved line of length %zu :\n", read);
-		printf("Line: %s\n", line);
+		printf("Line: %s", line);
 		struct order a = interpret_line(line);
-		printf("Your filter: %d, %s\n", filter_obj->id, filter_obj->name);
-		int matches_by_id = 1;
-		if (filter_obj->id >= 0 && filter_obj->id == a.id)
+		int match = 1;
+		if (filter_obj != NULL)
 		{
-			matches_by_id = 0;
-			printf("no match by id\n");
-		}
-		int matches_by_name = 1;
-		if (filter_obj->name[0] != '\0' && strcmp(filter_obj->name, a.name) != 0)
-		{
-			matches_by_name = 0;
-			printf("no match by name, compared: %s, and %s \n", filter_obj->name, a.name);
-		}
 
-		if (matches_by_id == 1 && matches_by_name == 1)
+			int matches_by_id = 1;
+			if (filter_obj->id >= 0 && filter_obj->id == a.id)
+			{
+				matches_by_id = 0;
+				printf("no match by id\n");
+			}
+			int matches_by_name = 1;
+			if (filter_obj->name[0] != '\0' && strcmp(filter_obj->name, a.name) != 0)
+			{
+				matches_by_name = 0;
+				printf("no match by name, compared: %s, and %s \n", filter_obj->name, a.name);
+			}
+
+			if (matches_by_id != 1 || matches_by_name != 1)
+			{
+				match = 0;
+			}
+		}
+		if (match == 1)
 		{
-			printf("Found order: %d\n", a.id);
+			printf("Found order %d\n", found);
+
 			if (res != NULL)
 			{
+				printf("Found order WRITE TO ARRAY: %d\n", a.id);
 				res[found] = a;
 			}
+
 			found = found + 1;
 		}
 	}
 	fclose(file);
-	if (res == NULL)
-	{
-		struct order *result = malloc(found * sizeof(int));
-		return filter(filter_obj, result);
-	}
 
-	return found;
+	if (res == NULL) // I know the size, go for filter
+	{
+		printf("I know the size, go for filter\n");
+		return filter(filter_obj, size, found);
+	}
+	else // I know the result, go for return
+	{
+		printf("I know the result, go for return\n");
+		return res;
+	}
 }
 
 int create(struct order *o)
@@ -110,7 +152,6 @@ int create(struct order *o)
 int main()
 {
 	struct order data[100];
-	int c = 0;
 
 	struct order example;
 	example.id = 0;
@@ -120,22 +161,41 @@ int main()
 	// CREATE - Write to file
 	// create(&example);
 
-	// READ - Write to file
+	// READ - With filter
+
 	struct order filter_obj;
 	filter_obj.id = -1;
 	strcpy(filter_obj.name, "numa");
-	struct order *result;
-	int count = filter(&filter_obj, result);
-	printf("RETURNED RES SIZE: %d\n", count);
-	int i;
-	while (i < count)
+	int c = -1;
+	int *count = &c;
+	struct order *result = filter(&filter_obj, count, -1);
+	printf("RETURNED RES SIZE FOR FILTER: %d\n", *count);
+	int i = 0;
+	while (i < *count)
 	{
+		printf("READ THE FILTERED RESULT %d\n", i);
 		struct order *r = &result[i];
 		printf("RETURNED RES: %d\n", r->id);
 		i++;
 	}
 
-	//read(1);
+	// READ - Without filter (read all)
+
+	printf("READ - Without filter (read all)\n");
+
+	int _c = -1;
+	int *_count = &_c;
+	printf("READ \n");
+	struct order *_result = filter(NULL, _count, -1);
+	printf("RETURNED RES SIZE FOR FILTER: %d\n", *_count);
+	int _i = 0;
+	while (_i < *_count)
+	{
+		printf("READ THE FILTERED RESULT %d\n", _i);
+		struct order *_r = &_result[_i];
+		printf("RETURNED RES: id: %d name: %s\n", _r->id, _r->name);
+		_i++;
+	};
 
 	/*
 	printf("size of: %d", LENGTH(data));
