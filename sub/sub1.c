@@ -235,12 +235,14 @@ int main()
 	char menu_option;
 	do
 	{
+		printf("--Mészáros és Mészáros Benzines Napelem Kft.-- \n\n Jellemzően egy évre vonatkoztatva 1000KWh energiát 1KW teljesítményt nyújtó 4 darab napelem panel ad.\n\n");
 		printf("0. List (All)\n");
 		printf("1. Create\n");
 		printf("2. Read (Filter)\n");
 		printf("3. Update (Filter) (Replacement)\n");
 		printf("4. Delete (Filter)\n");
 		printf("q. Exit\n");
+		printf("\nYour input: ");
 		scanf(" %c", &menu_option);
 		switch (menu_option)
 		{
@@ -302,7 +304,6 @@ int main()
 			printf("Quit\n");
 			break;
 		}
-		printf("\nYour choice is: %c\n", menu_option);
 	} while (menu_option != 'q');
 
 	return 0;
