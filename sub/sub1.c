@@ -48,6 +48,9 @@ struct order interpret_line(char *line)
 		case 1:
 			strcpy(result.name, pt);
 			break;
+		case 2:
+			result.time = time(NULL);
+			break;
 		}
 		//}
 		//printf("%d.: %s\n", col, pt);
@@ -149,7 +152,7 @@ int create(struct order *o)
 	fclose(file);
 }
 
-int delete (struct order *filter_obj)
+int update(struct order *filter_obj, struct order *update_obj)
 {
 	int ctr = 0;
 	char ch;
@@ -208,12 +211,35 @@ int delete (struct order *filter_obj)
 				printf("MAYA HEEE %s", line);
 				fprintf(fptr2, "%s", line);
 			}
+			else
+			{
+
+				if (update_obj != NULL)
+				{
+
+					if (update_obj->id >= 0)
+					{
+						a.id = update_obj->id;
+					}
+					if (update_obj->name[0] != '\0')
+					{
+						a.name[0] = update_obj->name[0];
+					}
+
+					fprintf(fptr2, "%d,%s,%s", a.id, a.name, ctime(&a.time));
+				}
+			}
 		}
 	}
 	fclose(fptr1);
 	fclose(fptr2);
 	remove("data.txt");
 	rename(temp, "data.txt");
+}
+
+int delete (struct order *filter_obj)
+{
+	return update(filter_obj, NULL);
 }
 
 int main()
@@ -272,6 +298,18 @@ int main()
 	strcpy(filter_obj.name, "numa");
 	delete (&filter_obj);
 
+	// UPDATE
+	/*
+	struct order filter_obj;
+	filter_obj.id = -1;
+	strcpy(filter_obj.name, "numa");
+
+	struct order update_obj;
+	update_obj.id = -1;
+	strcpy(update_obj.name, "hello");
+
+	update(&filter_obj, &update_obj);
+*/
 	/*
 	printf("size of: %d", LENGTH(data));
 	printf("current %d", c);
