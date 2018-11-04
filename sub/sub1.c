@@ -19,22 +19,68 @@ int list(struct order *data, int size)
 	return 0;
 }
 
-int read(struct order *o)
+struct order interpret_line(char *line)
+{
+	struct order result;
+	char *pt;
+	pt = strtok(line, ",");
+	int col = 0;
+	while (pt != NULL)
+	{
+		//printf("column %d\n", col);
+		/*
+		*/
+
+		//if (found == 1)
+		//{
+		switch (col)
+		{
+		case 0:
+			result.id = atoi(pt);
+			break;
+		case 1:
+			//result.name = pt;
+			break;
+		}
+		//}
+		//printf("%d.: %s\n", col, pt);
+
+		pt = strtok(NULL, ",");
+		col = col + 1;
+	}
+
+	return result;
+}
+
+struct order *read(int p)
 {
 
-	printf("time is: %s", ctime(&o->time));
-	return 0;
+	struct order *result = NULL;
+	FILE *file = fopen("data.txt", "r");
+	char *line = NULL;
+	size_t len = 0;
+	ssize_t read;
+
+	int found = 0;
+	while ((read = getline(&line, &len, file)) != -1 && result == NULL)
+	{
+		//printf("Retrieved line of length %zu :\n", read);
+		printf("Line: %s\n", line);
+		struct order a = interpret_line(line);
+		if (p == a.id)
+		{
+			result = &a;
+		}
+		printf("interpreted order: %d\n", a.id);
+	}
+	return result;
 }
 
 int create(struct order *o)
 {
-	printf("Creating: time is: %s", ctime(&o->time));
-
 	FILE *file = fopen("data.txt", "a");
-	// id, name, time
-	char *formatted = sprintf("%d,%s,%s\n", o->id, &o->name, ctime(&o->time));
-
-	fprintf(file, formatted);
+	fprintf(file, "%d,%s,%s\n", o->id, &o->name, ctime(&o->time));
+	fclose(file);
 }
 
 int main()
@@ -47,10 +93,11 @@ int main()
 	strcpy(example.name, "NAAAAME");
 	example.time = time(NULL);
 
-	FILE *file;
-	file = fopen("data.txt", "w+");
+	// create(&example);
 
-	create(&example);
+	read(0);
+
+	read(1);
 
 	/*
 	printf("size of: %d", LENGTH(data));
