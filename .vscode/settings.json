@@ -3,6 +3,7 @@
   "editor.tabSize": 4,
   "editor.tabCompletion": "on",
   "files.associations": {
-    "time.h": "c"
+    "time.h": "c",
+    "fcntl.h": "c"
   }
 }
