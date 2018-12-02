@@ -5,7 +5,15 @@
 #include <string.h>
 #include <sys/types.h>
 
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/sem.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #define LENGTH(x) (sizeof(x) / sizeof((x)[0]))
+char *order_format = "{id: %d, name: %s, email: %s, phone: %s, perf: %s, time: %s}\n";
+// gcc -lpthread sub2.c
 
 struct order
 {
@@ -236,7 +244,17 @@ int delete (struct order *filter_obj)
 
 void print_order(struct order *o)
 {
-	printf("{id: %d, name: %s, email: %s, phone: %s, perf: %s, time: %s}\n", o->id, &o->name, &o->email, &o->phone, &o->perf, ctime(&o->time));
+	printf(order_format, o->id, &o->name, &o->email, &o->phone, &o->perf, ctime(&o->time));
+}
+
+char *str_order(struct order *o)
+{
+	char buf[200];
+}
+void formatstr(const char *format, ...)
+{
+
+	//return buffer;
 }
 
 struct order *read_order()
@@ -276,6 +294,92 @@ struct order *read_order()
 
 int main()
 {
+	printf("main start\n");
+
+	int pipefd[2]; // unnamed pipe file descriptor array
+	pid_t pid;
+	char buffer[100]; // char array for reading from pipe
+	if (pipe(pipefd) == -1)
+	{
+		perror("Hiba a pipe nyitaskor!");
+		exit(EXIT_FAILURE);
+	}
+	pid = fork(); // creating parent-child processes
+	if (pid == -1)
+	{
+		perror("Fork hiba");
+		exit(EXIT_FAILURE);
+	}
+
+	if (pid == 0) // Szerelő
+	{
+		sleep(1); // sleeping a few seconds, not necessary
+		printf("%i", pid);
+		close(pipefd[1]); //Usually we close the unused write end
+		printf("Gyerek elkezdi olvasni a csobol az adatokat!\n");
+		read(pipefd[0], buffer, sizeof(buffer)); // reading max 100 chars
+		printf("Gyerek olvasta uzenet: %s", buffer);
+		printf("\n");
+		close(pipefd[0]); // finally we close the used read end
+	}
+	else // Társaság (Parent) process fájlkezelés csak itt lehet
+	{
+		printf("Társaság - start pid: %i!\n", pid);
+
+		int _c = -1;
+		int *_count = &_c;
+		struct order *_result = filter(NULL, _count, -1);
+		int _i = 0;
+		while (_i < *_count)
+		{
+			struct order *_r = &_result[_i];
+			printf("Társaság - feladat kiolvasva: ", pid);
+			print_order(_r);
+
+			int bufSize = 10;
+			char *mystr = "This is my string!";
+			char *buf = malloc(bufSize);
+
+			if (snprintf(buf, bufSize, "%s", mystr) >= bufSize)
+			{
+				bufSize *= 2;
+				printf("Not enough space. Trying %d bytes\n", bufSize);
+				free(buf);
+				buf = malloc(bufSize);
+
+				if (snprintf(buf, bufSize, "%s", mystr) >= bufSize)
+				{
+					printf("Still not enough space. Aborting\n");
+					exit(1);
+				}
+			}
+
+			printf("There was enough space!\n");
+			printf("buf: %s\n", buf);
+
+			/*va_list args;
+			va_start(args, format);
+			vsprintf(order_buffer, order_format, _r->id, &_r->name, &_r->email, &_r->phone, &_r->perf, ctime(&_r->time));
+*/
+			close(pipefd[0]); //Usually we close unused read end
+			write(pipefd[1], "Hajra Fradi!", 13);
+			close(pipefd[1]); // Closing write descriptor
+
+			_i++;
+		};
+
+		close(pipefd[0]); //Usually we close unused read end
+		write(pipefd[1], "Hajra Fradi!", 13);
+		close(pipefd[1]); // Closing write descriptor
+		printf("Szulo beirta az adatokat a csobe!\n");
+		fflush(NULL); // flushes all write buffers (not necessary)
+		wait();		  // waiting for child process (not necessary)
+					  // try it without wait()
+		printf("Szulo befejezte!");
+	}
+	exit(EXIT_SUCCESS); // force exit, not necessary
+
+	/*
 	char menu_option;
 	do
 	{
@@ -349,6 +453,6 @@ int main()
 			break;
 		}
 	} while (menu_option != 'q');
-
+	*/
 	return 0;
 }

@@ -12,6 +12,8 @@
 
 #define MEMSIZE 1024
 
+// gcc -lpthread pos_szemafor.c
+
 sem_t *szemafor_letrehozas(char *nev, int szemafor_ertek)
 {
 	sem_t *semid = sem_open(nev, O_CREAT, S_IRUSR | S_IWUSR, szemafor_ertek);
