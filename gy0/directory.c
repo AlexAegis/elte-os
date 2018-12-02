@@ -4,10 +4,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <dirent.h> //opendir, readdir
+#include <dirent.h>    //opendir, readdir
 #include <sys/types.h> //opendir
-#include <sys/stat.h> //stat
-#include <unistd.h>   //stat
+#include <sys/stat.h>  //stat
+#include <unistd.h>    //stat
 /*
 struct dirent {
     ino_t          d_ino;       // inode number
@@ -34,23 +34,33 @@ struct stat {
     time_t    st_ctime;   // time of last status change 
 };
 */
-int main(){
- DIR* d;
- struct dirent * dp; //pointer to dirent struct
- struct stat st;
- d=opendir("."); //parameter the directory name (with path) we want to open
- if (d<0){perror("Some problem in opening");exit(1);}
- while (dp=readdir(d)){ 
-   stat(dp->d_name,&st);  //fstat(file descriptor, stat structure)
-   if (S_ISDIR(st.st_mode)) {
-     printf("d:");
-   }
-   else {
-     if (st.st_mode & S_IRUSR) printf("r "); //to read out the permissions 
-     else printf("- ");
-   }
-   printf("%s\n",dp->d_name);
- }
- closedir(d); //close directory after opendir
- return 0;
+int main()
+{
+  DIR *d;
+  struct dirent *dp; //pointer to dirent struct
+  struct stat st;
+  d = opendir("."); //parameter the directory name (with path) we want to open
+  if (d < 0)
+  {
+    perror("Some problem in opening");
+    exit(1);
+  }
+  while (dp = readdir(d))
+  {
+    stat(dp->d_name, &st); //fstat(file descriptor, stat structure)
+    if (S_ISDIR(st.st_mode))
+    {
+      printf("d:");
+    }
+    else
+    {
+      if (st.st_mode & S_IRUSR)
+        printf("r "); //to read out the permissions
+      else
+        printf("- ");
+    }
+    printf("%s\n", dp->d_name);
+  }
+  closedir(d); //close directory after opendir
+  return 0;
 }
