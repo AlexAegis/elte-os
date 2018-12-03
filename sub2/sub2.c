@@ -23,6 +23,8 @@ char *order_format = "{id: %d, name: %s, email: %s, phone: %s, perf: %s, time: %
 pid_t pid;
 int *s; // semaphore array
 sem_t *van_meg;
+sem_t *sem_write_guard;
+sem_t *sem_read_guard;
 //
 sem_t *szemafor_letrehozas(char *nev, int szemafor_ertek)
 {
@@ -31,6 +33,28 @@ sem_t *szemafor_letrehozas(char *nev, int szemafor_ertek)
 		perror("sem_open");
 	return semid;
 }
+
+int sem_lock(sem_t *sem, char *name)
+{
+	printf("%i \t- locking ", pid);
+	printf("%s", name);
+	printf(" semaphore\n");
+	sem_wait(sem);
+	printf("%i \t- locked! ", pid);
+	printf("%s", name);
+	printf(" semaphore\n");
+}
+int sem_release(sem_t *sem, char *name)
+{
+	printf("%i \t- releasing ", pid);
+	printf("%s", name);
+	printf(" semaphore\n");
+	sem_post(sem);
+	printf("%i \t- released! ", pid);
+	printf("%s", name);
+	printf(" semaphore\n");
+}
+
 void szemafor_torles(char *nev)
 {
 	sem_unlink(nev);
@@ -93,7 +117,7 @@ struct order *filter(struct order *filter_obj, int *size, int here)
 	//printf("Hejhó\n");
 	if (here > 0)
 	{
-		printf("MALLOCCED\n");
+		//printf("MALLOCCED\n");
 		res = malloc(here * sizeof(struct order));
 	}
 	//printf("1\n");
@@ -151,8 +175,6 @@ struct order *filter(struct order *filter_obj, int *size, int here)
 			found = found + 1;
 		}
 	}
-
-	printf("seeg!\n");
 	fclose(file);
 
 	if (res == NULL && found > 0) // I know the size, go for filter
@@ -271,17 +293,13 @@ int delete (struct order *filter_obj)
 
 void print_order(struct order *o)
 {
+	printf("%i \t- ", pid);
 	printf(order_format, o->id, &o->name, &o->email, &o->phone, &o->perf, ctime(&o->time));
 }
 
 char *str_order(struct order *o)
 {
 	char buf[200];
-}
-void formatstr(const char *format, ...)
-{
-
-	//return buffer;
 }
 
 struct order *read_order()
@@ -321,7 +339,7 @@ struct order *read_order()
 
 void print_sem()
 {
-	printf("id: %i - s[0]: %i, s[1]: %i\n", pid, s[0], s[1]);
+	printf("%i \t- s[0]: %i, s[1]: %i\n", pid, s[0], s[1]);
 }
 
 int main(int argc, char *argv[])
@@ -337,6 +355,8 @@ int main(int argc, char *argv[])
 	key_t kulcs;
 	int sh_mem_id;
 	char *sem_name_van_meg = "van_meg";
+	char *sem_name_sem_write_guard = "sem_write_guard";
+	char *sem_name_sem_read_guard = "sem_read_guard";
 	//char *sem_nev2 = "korte";
 	//char *sem_nev3 = "barack";
 	//
@@ -346,8 +366,8 @@ int main(int argc, char *argv[])
 	s[0] = 0; // a polcon levo kenyerek szama
 	// s[1] = 1; // mehet a folyamat
 	van_meg = szemafor_letrehozas(sem_name_van_meg, 0);
-	//ures = szemafor_letrehozas(sem_nev2, N); // ures a polc
-	//tele = szemafor_letrehozas(sem_nev3, 0);
+	sem_write_guard = szemafor_letrehozas(sem_name_sem_write_guard, 0);
+	sem_read_guard = szemafor_letrehozas(sem_name_sem_read_guard, 0);
 	// SEMAPHORE STUFF  - END
 
 	if (pipe(pipefd) == -1)
@@ -364,35 +384,51 @@ int main(int argc, char *argv[])
 
 	if (pid == 0) // Szerelő (Child)
 	{
-		printf("Szerelő indul: %i\n", pid);
-		sleep(1); // sleeping a few seconds, not necessary
 
-		printf("Szerelő - locking van_meg\n");
-		sem_wait(van_meg);
+		sem_lock(sem_read_guard, sem_name_sem_read_guard);
+		sem_release(sem_read_guard, sem_name_sem_read_guard);
+
+		sem_lock(van_meg, sem_name_van_meg);
+		int count = s[0];
+		printf("%i \t- count: %i\n", pid, count);
 		print_sem();
-		close(pipefd[1]); //Usually we close the unused write end
+		sem_release(van_meg, sem_name_van_meg);
+		int i = 0;
+		while (i < count)
+		{
 
-		printf("Gyerek elkezdi olvasni a csobol az adatokat!\n");
+			sem_lock(sem_read_guard, sem_name_sem_read_guard);
 
-		read(pipefd[0], order_buffer, 4096 /*sizeof(struct order)*/); // reading max 100 chars
-		printf("Gyerek olvasta uzenet: %i\n", order_buffer->id);
+			printf("%i \t- szerelő indul: \n", pid);
+			//sleep(1); // sleeping a few seconds, not necessary
 
-		print_order(order_buffer);
-		printf("\n");
-		close(pipefd[0]); // finally we close the used read end
+			close(pipefd[1]); //Usually we close the unused write end
+
+			printf("%i \t- Gyerek elkezdi olvasni a csobol az adatokat!\n", pid);
+
+			read(pipefd[0], order_buffer, 4096 /*sizeof(struct order)*/); // reading max 100 chars
+			printf("%i \t- olvasta uzenet: %i\n", pid, order_buffer->id);
+
+			print_order(order_buffer);
+			close(pipefd[0]); // finally we close the used read end
+
+			sem_release(sem_write_guard, sem_name_sem_write_guard);
+
+			i = i + 1;
+		}
 	}
 	else // Társaság (Parent) process fájlkezelés csak itt lehet
 	{
-		printf("Társaság - start pid: %i!\n", pid);
+		sem_release(van_meg, sem_name_van_meg);
+		sem_lock(van_meg, sem_name_van_meg);
+		printf("%i \t- start társaság!\n", pid);
 		int _c = -1;
 		int *_count = &_c;
 		struct order *_result = filter(NULL, _count, -1);
-		printf("Társaság - result count of all: %i\n", *_count);
+		printf("%i \t- result count of all: %i\n", pid, *_count);
 		int _i = 0;
-		sem_post(van_meg);
-		sem_wait(van_meg);
-		printf("Társaság - locked van_meg semaphore\n");
 		s[0] = *_count; // darabszám
+		int current_count = s[0];
 		if (*_count > 0)
 		{
 			s[1] = 1; // még van
@@ -402,29 +438,33 @@ int main(int argc, char *argv[])
 			s[1] = 0; // eleve nem is volt
 		}
 		print_sem();
-		sem_post(van_meg);
-		printf("Társaság - released van_meg semaphore\n");
+		sem_release(van_meg, sem_name_van_meg);
+		sem_release(sem_write_guard, sem_name_sem_write_guard);
 		while (_i < 1) // *_count
 		{
+
+			sem_lock(sem_write_guard, sem_name_sem_write_guard);
+
 			struct order *_r = &_result[_i];
-			printf("Társaság - feladat kiolvasva: \n", pid);
+			printf("%i \t- feladat fájlból kiolvasva: \n", pid);
 			print_order(_r);
 
-			printf("Társaság - sizeof order: %i\n", 4096);
+			printf("%i \t- Társaság - sizeof order: %i\n", pid, 4096);
 
 			close(pipefd[0]); //Usually we close unused read end
-			write(pipefd[1], _r, sizeof(*_r));
+			write(pipefd[1], _r, 4096 /*sizeof(*_r)*/);
 			close(pipefd[1]); // Closing write descriptor
-			printf("Szulo beirta az adatokat a csobe!\n");
+			printf("%i \t- Szulo beirta az adatokat a csobe!\n", pid);
 
+			sem_release(sem_read_guard, sem_name_sem_read_guard);
 			_i++;
 		};
-		printf("Társaság - locking van_meg semaphore to set none left\n");
+		printf("%i \t- Társaság - locking van_meg semaphore to set none left\n", pid);
 		sem_wait(van_meg);
 		s[1] = 0; // már nincs
 		print_sem();
 		sem_post(van_meg);
-		printf("Társaság - released van_meg semaphore to set none left\n");
+		printf("%i \t- Társaság - released van_meg semaphore to set none left\n", pid);
 
 		fflush(NULL); // flushes all write buffers (not necessary)
 					  //wait();		  // waiting for child process (not necessary)
@@ -434,6 +474,8 @@ int main(int argc, char *argv[])
 		shmdt(s);
 		shmctl(sh_mem_id, IPC_RMID, NULL);
 		szemafor_torles(sem_name_van_meg);
+		szemafor_torles(sem_name_sem_write_guard);
+		szemafor_torles(sem_name_sem_read_guard);
 
 		printf("Szulo befejezte!\n");
 	}
