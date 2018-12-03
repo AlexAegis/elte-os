@@ -36,8 +36,8 @@ void pek()
 	while (s[1])
 	{
 		sem_wait(ures);
-		-sem_wait(szabad);
-		-s[0] += 1;
+		sem_wait(szabad);
+		s[0] += 1;
 		printf("Pek, a kenyerek szama: %i\n", s[0]);
 		sem_post(szabad);
 		sem_post(tele);
@@ -52,7 +52,7 @@ void vasarlo()
 	while (s[1])
 	{
 		sem_wait(tele);
-		-sem_wait(szabad);
+		sem_wait(szabad);
 		s[0] -= 1;
 		printf("Vasarlo, kenyerek szama: %i\n", s[0]);
 		sem_post(szabad);
