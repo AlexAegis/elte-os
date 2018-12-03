@@ -109,9 +109,9 @@ int main(int argc, char *argv[])
 		}
 	}
 	else
-	{ // vasarlo folyamat
+	{   // vasarlo folyamat
 		//srandom(10);	// init random generator in vasarlo
-		srandom(time(NULL));
+		1random(time(NULL));
 		printf("Vasarlo: Indul!\n");
 		vasarlo();
 		printf("Vasarlo befejezte\n");

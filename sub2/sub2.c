@@ -357,8 +357,7 @@ int main(int argc, char *argv[])
 	char *sem_name_van_meg = "van_meg";
 	char *sem_name_sem_write_guard = "sem_write_guard";
 	char *sem_name_sem_read_guard = "sem_read_guard";
-	//char *sem_nev2 = "korte";
-	//char *sem_nev3 = "barack";
+
 	//
 	kulcs = ftok(argv[0], 1);
 	sh_mem_id = shmget(kulcs, MEMSIZE, IPC_CREAT | S_IRUSR | S_IWUSR);
@@ -384,9 +383,7 @@ int main(int argc, char *argv[])
 
 	if (pid == 0) // Szerelő (Child)
 	{
-
-		sem_lock(sem_read_guard, sem_name_sem_read_guard);
-		sem_release(sem_read_guard, sem_name_sem_read_guard);
+		sleep(1);
 
 		sem_lock(van_meg, sem_name_van_meg);
 		int count = s[0];
@@ -405,6 +402,7 @@ int main(int argc, char *argv[])
 			close(pipefd[1]); //Usually we close the unused write end
 
 			printf("%i \t- Gyerek elkezdi olvasni a csobol az adatokat!\n", pid);
+			print_order(order_buffer);
 
 			read(pipefd[0], order_buffer, 4096 /*sizeof(struct order)*/); // reading max 100 chars
 			printf("%i \t- olvasta uzenet: %i\n", pid, order_buffer->id);
@@ -452,7 +450,12 @@ int main(int argc, char *argv[])
 			printf("%i \t- Társaság - sizeof order: %i\n", pid, 4096);
 
 			close(pipefd[0]); //Usually we close unused read end
-			write(pipefd[1], _r, 4096 /*sizeof(*_r)*/);
+			write(pipefd[1], _r, sizeof(_r));
+			printf("%i \t- \t  PRINT FRIM WRITEPIPEE!\n");
+
+			struct order *_read;
+			read(pipefd[0], _read, 4096);
+			print_order(_read);
 			close(pipefd[1]); // Closing write descriptor
 			printf("%i \t- Szulo beirta az adatokat a csobe!\n", pid);
 

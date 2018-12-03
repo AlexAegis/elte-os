@@ -1,11 +1,64 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <stdarg.h>
 #include <time.h>
-#include <string.h>
+
+#include <sys/sem.h>
+
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <semaphore.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <string.h>
+#include <unistd.h>
+#include <wait.h>
 
 #define LENGTH(x) (sizeof(x) / sizeof((x)[0]))
+#define MEMSIZE 1024
+
+char *order_format = "{id: %d, name: %s, email: %s, phone: %s, perf: %s, time: %s}\n";
+// gcc -lpthread sub2.c
+pid_t pid;
+int *s; // semaphore array
+sem_t *van_meg;
+sem_t *sem_write_guard;
+sem_t *sem_read_guard;
+//
+sem_t *szemafor_letrehozas(char *nev, int szemafor_ertek)
+{
+    sem_t *semid = sem_open(nev, O_CREAT, S_IRUSR | S_IWUSR, szemafor_ertek);
+    if (semid == SEM_FAILED)
+        perror("sem_open");
+    return semid;
+}
+
+int sem_lock(sem_t *sem, char *name)
+{
+    printf("%i \t- locking ", pid);
+    printf("%s", name);
+    printf(" semaphore\n");
+    sem_wait(sem);
+    printf("%i \t- locked! ", pid);
+    printf("%s", name);
+    printf(" semaphore\n");
+}
+int sem_release(sem_t *sem, char *name)
+{
+    printf("%i \t- releasing ", pid);
+    printf("%s", name);
+    printf(" semaphore\n");
+    sem_post(sem);
+    printf("%i \t- released! ", pid);
+    printf("%s", name);
+    printf(" semaphore\n");
+}
+
+void szemafor_torles(char *nev)
+{
+    sem_unlink(nev);
+}
 
 struct order
 {
@@ -61,17 +114,20 @@ struct order *filter(struct order *filter_obj, int *size, int here)
     ssize_t read;
     //printf("Filter. size: %d, here: %d", *size, here);
     struct order *res = NULL;
-
+    //printf("Hejhó\n");
     if (here > 0)
     {
-        //printf("MALLOCCED");
+        //printf("MALLOCCED\n");
         res = malloc(here * sizeof(struct order));
     }
-    //printf("1");
+    //printf("1\n");
     *size = here;
     int found = 0;
+
+    //printf("seedddsg!\n");
     while ((read = getline(&line, &len, file)) != -1)
     {
+        //printf("getline!\n");
         struct order a = interpret_line(line);
         int match = 1;
         if (filter_obj != NULL)
@@ -79,6 +135,7 @@ struct order *filter(struct order *filter_obj, int *size, int here)
 
             int matches_by_id = 1;
             if (filter_obj->id >= 0 && filter_obj->id == a.id)
+
             {
                 matches_by_id = 0;
             }
@@ -236,7 +293,13 @@ int delete (struct order *filter_obj)
 
 void print_order(struct order *o)
 {
-    printf("{id: %d, name: %s, email: %s, phone: %s, perf: %s, time: %s}\n", o->id, &o->name, &o->email, &o->phone, &o->perf, ctime(&o->time));
+    printf("%i \t- ", pid);
+    printf(order_format, o->id, &o->name, &o->email, &o->phone, &o->perf, ctime(&o->time));
+}
+
+char *str_order(struct order *o)
+{
+    char buf[200];
 }
 
 struct order *read_order()
@@ -274,81 +337,153 @@ struct order *read_order()
     return result;
 }
 
-int main()
+void print_sem()
 {
-    char menu_option;
-    do
+    printf("%i \t- s[0]: %i, s[1]: %i\n", pid, s[0], s[1]);
+}
+
+int main(int argc, char *argv[])
+{
+    printf("main start\n");
+
+    int pipefd[2]; // unnamed pipe file descriptor array
+
+    char buffer[100]; // char array for reading from pipe
+    struct order *order_buffer;
+
+    // SEMAPHORE STUFF  - START
+    key_t kulcs;
+    int sh_mem_id;
+    char *sem_name_van_meg = "van_meg";
+    char *sem_name_sem_write_guard = "sem_write_guard";
+    char *sem_name_sem_read_guard = "sem_read_guard";
+
+    //
+    kulcs = ftok(argv[0], 1);
+    sh_mem_id = shmget(kulcs, MEMSIZE, IPC_CREAT | S_IRUSR | S_IWUSR);
+    s = (int *)shmat(sh_mem_id, NULL, 0);
+    s[0] = 0; // a polcon levo kenyerek szama
+    // s[1] = 1; // mehet a folyamat
+    van_meg = szemafor_letrehozas(sem_name_van_meg, 0);
+    sem_write_guard = szemafor_letrehozas(sem_name_sem_write_guard, 0);
+    sem_read_guard = szemafor_letrehozas(sem_name_sem_read_guard, 0);
+    // SEMAPHORE STUFF  - END
+
+    if (pipe(pipefd) == -1)
     {
-        printf("\n\n--Mészáros és Mészáros Benzines Napelem Kft.-- \n\n Jellemzően egy évre vonatkoztatva 1000KWh energiát 1KW teljesítményt nyújtó 4 darab napelem panel ad.\n\n");
-        printf("0. List (All)\n");
-        printf("1. Create\n");
-        printf("2. Read (Filter)\n");
-        printf("3. Update (Filter) (Replacement)\n");
-        printf("4. Delete (Filter)\n");
-        printf("q. Exit\n");
-        printf("\nYour input: ");
-        scanf(" %c", &menu_option);
-        switch (menu_option)
+        perror("Hiba a pipe nyitaskor!\n");
+        exit(EXIT_FAILURE);
+    }
+    pid = fork(); // creating parent-child processes
+    if (pid == -1)
+    {
+        perror("Fork hiba\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if (pid == 0) // Szerelő (Child)
+    {
+        sleep(1);
+
+        sem_lock(van_meg, sem_name_van_meg);
+        int count = s[0];
+        printf("%i \t- count: %i\n", pid, count);
+        print_sem();
+        sem_release(van_meg, sem_name_van_meg);
+        int i = 0;
+        while (i < count)
         {
-        case '0':
-            printf("0 - LIST MODE\n");
-            int _c = -1;
-            int *_count = &_c;
-            struct order *_result = filter(NULL, _count, -1);
-            int _i = 0;
-            while (_i < *_count)
-            {
-                struct order *_r = &_result[_i];
-                print_order(_r);
-                _i++;
-            };
-            break;
-        case '1':
-            printf("1 - CREATE MODE\n");
-            printf("enter order data\n");
-            create(read_order());
-            break;
-        case '2':
-            printf("2 - READ MODE\n");
-            printf("enter read filter\n");
-            struct order *_read_filter = read_order();
-            // print_order(_read_filter);
 
-            int _read_c = -1;
-            int *_read_count = &_read_c;
-            struct order *_read_result = filter(_read_filter, _read_count, -1);
-            int _read_i = 0;
-            while (_read_i < *_read_count)
-            {
-                struct order *_read_r = &_read_result[_read_i];
-                print_order(_read_r);
-                _read_i++;
-            };
+            sem_lock(sem_read_guard, sem_name_sem_read_guard);
 
-            break;
-        case '3':
-            printf("3 - UPDATE MODE\n");
-            printf("enter update filter\n");
-            struct order *_update_filter = read_order();
-            printf("enter replace\n");
-            struct order *_update_replace = read_order();
+            printf("%i \t- szerelő indul: \n", pid);
+            //sleep(1); // sleeping a few seconds, not necessary
 
-            update(_update_filter, _update_replace);
+            close(pipefd[1]); //Usually we close the unused write end
 
-            break;
-        case '4':
-            printf("4 - DELETE MODE\n");
-            printf("enter delete filter\n");
-            struct order *_delete_filter = read_order();
+            printf("%i \t- Gyerek elkezdi olvasni a csobol az adatokat!\n", pid);
+            print_order(order_buffer);
 
-            delete (_delete_filter);
+            read(pipefd[0], order_buffer, 4096 /*sizeof(struct order)*/); // reading max 100 chars
+            printf("%i \t- olvasta uzenet: %i\n", pid, order_buffer->id);
 
-            break;
-        case 'q':
-            printf("Quit\n");
-            break;
+            print_order(order_buffer);
+            close(pipefd[0]); // finally we close the used read end
+
+            sem_release(sem_write_guard, sem_name_sem_write_guard);
+
+            i = i + 1;
         }
-    } while (menu_option != 'q');
+    }
+    else // Társaság (Parent) process fájlkezelés csak itt lehet
+    {
+        sem_release(van_meg, sem_name_van_meg);
+        sem_lock(van_meg, sem_name_van_meg);
+        printf("%i \t- start társaság!\n", pid);
+        int _c = -1;
+        int *_count = &_c;
+        struct order *_result = filter(NULL, _count, -1);
+        printf("%i \t- result count of all: %i\n", pid, *_count);
+        int _i = 0;
+        s[0] = *_count; // darabszám
+        int current_count = s[0];
+        if (*_count > 0)
+        {
+            s[1] = 1; // még van
+        }
+        else
+        {
+            s[1] = 0; // eleve nem is volt
+        }
+        print_sem();
+        sem_release(van_meg, sem_name_van_meg);
+        sem_release(sem_write_guard, sem_name_sem_write_guard);
+        while (_i < 1) // *_count
+        {
+
+            sem_lock(sem_write_guard, sem_name_sem_write_guard);
+
+            struct order *_r = &_result[_i];
+            printf("%i \t- feladat fájlból kiolvasva: \n", pid);
+            print_order(_r);
+
+            printf("%i \t- Társaság - sizeof order: %i\n", pid, 4096);
+
+            close(pipefd[0]); //Usually we close unused read end
+            write(pipefd[1], _r, sizeof(_r));
+            printf("%i \t- \t  PRINT FRIM WRITEPIPEE!\n");
+
+            struct order *_read;
+            read(pipefd[0], _read, 4096);
+            print_order(_read);
+            close(pipefd[1]); // Closing write descriptor
+            printf("%i \t- Szulo beirta az adatokat a csobe!\n", pid);
+
+            sem_release(sem_read_guard, sem_name_sem_read_guard);
+            _i++;
+        };
+        printf("%i \t- Társaság - locking van_meg semaphore to set none left\n", pid);
+        sem_wait(van_meg);
+        s[1] = 0; // már nincs
+        print_sem();
+        sem_post(van_meg);
+        printf("%i \t- Társaság - released van_meg semaphore to set none left\n", pid);
+
+        fflush(NULL); // flushes all write buffers (not necessary)
+                      //wait();		  // waiting for child process (not necessary)
+                      // try it without wait()
+
+        wait(NULL);
+        shmdt(s);
+        shmctl(sh_mem_id, IPC_RMID, NULL);
+        szemafor_torles(sem_name_van_meg);
+        szemafor_torles(sem_name_sem_write_guard);
+        szemafor_torles(sem_name_sem_read_guard);
+
+        printf("Szulo befejezte!\n");
+    }
+
+    exit(EXIT_SUCCESS); // force exit, not necessary
 
     return 0;
 }
