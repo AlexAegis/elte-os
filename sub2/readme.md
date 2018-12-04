@@ -4,19 +4,27 @@
 
 Készítsen C programot, amellyel a leírt tevékenység elvégezhető.
 
-
 Szereplők:
 
 Társaság (szülő)
 ^
-|   ^^ Nyugta hogy megkapta a feladatot
+| ^^ Nyugta hogy megkapta a feladatot
 pipe
-|   ˇˇFeladat: 1 vagy 2 telepítés
+| ˇˇFeladat: 1 vagy 2 telepítés
 ˇ
-Szerelő (gyerek) 
+Szerelő (gyerek)
 ^
 |
 szemafor
 |
 ˇ
 Központ
+
+sem_lock(sem_worker_guard, sem_name_sem_worker_guard);
+sem_release(sem_worker_guard, sem_name_sem_worker_guard);
+
+sem_lock(sem_company_guard, sem_name_sem_company_guard);
+sem_release(sem_company_guard, sem_name_sem_company_guard);
+
+sem_lock(sem_pipe_guard, sem_name_sem_pipe_guard);
+sem_release(sem_pipe_guard, sem_name_sem_pipe_guard);
