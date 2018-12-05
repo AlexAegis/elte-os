@@ -75,7 +75,7 @@ struct order interpret_line(char* line)
 
 struct order* filter(struct order* filter_obj, int* size, int here)
 {
-    FILE* file = fopen("data.txt", "r");
+    FILE* file = fopen("src/data.txt", "r");
     char* line = NULL;
     size_t len = 0;
     ssize_t read;
