@@ -74,6 +74,12 @@ int company()
     struct order* _result = filter(NULL, _count, -1);
     printf("%i\t- result count of all: %i\n", getpid(), *_count);
     int _i = 0;
+    /*
+    // simulation of days:
+    int current = 0;
+    while (current < _count || current < 100){ // hard limit in case of something messes up
+
+    }*/
 
     struct order* _r = &_result[2];
 
