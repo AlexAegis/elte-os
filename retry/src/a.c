@@ -58,10 +58,10 @@ int write_to_pipe(struct order* o, int* pipe_desc)
     return 0;
 }
 
-int read_from_pipe(int* target)
+int read_from_pipe(int* target, int* pipe_desc)
 {
     printf(C_YELLOW "%i\t- Reading from pipe then unpausing parent." C_RESET "\n", getpid());
-    read(p[0], target, sizeof(int));
+    read(pipe_desc[0], target, sizeof(int));
     kill(getppid(), SIGUSR1); // unpause parent
     printf(C_YELLOW "%i\t- Read from pipe, got: %i" C_RESET "\n", getpid(), *target);
 }
@@ -88,6 +88,6 @@ int worker()
 
     int target;
 
-    read_from_pipe(&target);
-    read_from_pipe(&target);
+    read_from_pipe(&target, p);
+    read_from_pipe(&target, p);
 }
