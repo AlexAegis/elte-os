@@ -73,14 +73,23 @@ int company()
     struct order* _result = filter(NULL, &_total, -1);
     printf("%i\t- result count of all: %i\n", getpid(), _total);
     int _i = 0;
+    int current_task = 0;
+    int left = _total;
 
     // simulation of days:
-    int current = 0;
-    while (current < _total && current < 100) // hard limit in case of something messes up
+    int current_day = 0;
+    while (current_day < _total && current_day < 50) // hard limit in case of something messes up
     {
-        printf(C_CYAN "%i\t- " C_RED "DAY %i" C_CYAN " started!" C_RESET "\n", getpid(), current + 1);
-
-        current++;
+        printf(C_CYAN "%i\t- " C_RED "DAY %i" C_CYAN " started! Tasks left: %i." C_RESET "\n", getpid(), current_day + 1, left);
+        if (left > 0)
+        {
+            printf("%i\t- " C_CYAN " Task id is: %i is for performance: %i" C_RESET "\n", getpid(), _result[current_task].id, _result[current_task].perf);
+        }
+        else
+        {
+            printf(C_CYAN "%i\t- " C_RED "DAY %i" C_CYAN " No tasks left! Pizza time!" C_RESET "\n", getpid(), current_day + 1);
+        }
+        current_day++;
     }
 
     struct order* _r = &_result[2];

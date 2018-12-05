@@ -42,7 +42,7 @@ struct order
     char name[255];
     char email[255];
     char phone[255];
-    char perf[255];
+    int perf;
     time_t time;
     int done;
 };
@@ -70,7 +70,7 @@ struct order interpret_line(char* line)
             strcpy(result.phone, pt);
             break;
         case 4:
-            strcpy(result.perf, pt);
+            result.perf = atoi(pt);
             break;
         case 5:
             result.time = time(NULL);
@@ -135,7 +135,7 @@ struct order* filter(struct order* filter_obj, int* size, int here)
                 matches_by_phone = 0;
             }
             int matches_by_perf = 1;
-            if (filter_obj->perf[0] != '\0' && !strstr(a.perf, filter_obj->perf))
+            if (filter_obj->perf >= 0 && filter_obj->perf == a.perf)
             {
                 matches_by_perf = 0;
             }
@@ -177,7 +177,7 @@ struct order* filter(struct order* filter_obj, int* size, int here)
 int create(struct order* o)
 {
     FILE* file = fopen("data.txt", "a");
-    fprintf(file, "%d,%s,%s,%s,%s,%s}\n", o->id, &o->name, &o->email, &o->phone, &o->perf, ctime(&o->time));
+    fprintf(file, "%i,%s,%s,%s,%i,%s,%i}\n", o->id, o->name, o->email, o->phone, o->perf, ctime(&o->time), o->done);
     fclose(file);
 }
 
@@ -256,15 +256,15 @@ int update(struct order* filter_obj, struct order* update_obj)
                     {
                         a.phone[0] = update_obj->phone[0];
                     }
-                    if (update_obj->perf[0] != '\0')
+                    if (update_obj->perf >= 0)
                     {
-                        a.perf[0] = update_obj->perf[0];
+                        a.perf = update_obj->perf;
                     }
                     if (update_obj->done >= 0)
                     {
                         a.done = update_obj->done;
                     }
-                    fprintf(fptr2, "%d,%s,%s,%s,%s,%s,%d}\n", a.id, a.name, a.email, a.phone, a.perf, ctime(&a.time), a.done);
+                    fprintf(fptr2, "%d,%s,%s,%s,%d,%s,%d}\n", a.id, a.name, a.email, a.phone, a.perf, ctime(&a.time), a.done);
                 }
             }
         }
@@ -320,7 +320,7 @@ struct order* read_order()
     scanf("%s", buffer);
     if (strcmp(buffer, "-") != 0)
     {
-        strcpy(result->perf, buffer);
+        result->perf = atoi(buffer);
     }
     result->time = time(NULL);
     return result;
