@@ -86,8 +86,8 @@ int company()
 int worker()
 {
 
-    int* target = malloc(sizeof(int));
+    int target;
 
-    read_from_pipe(target);
-    read_from_pipe(target);
+    read_from_pipe(&target);
+    read_from_pipe(&target);
 }
