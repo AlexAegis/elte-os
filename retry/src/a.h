@@ -26,7 +26,7 @@
 #define C_CYAN "\x1b[36m"
 #define C_RESET "\x1b[0m"
 
-char* order_format = "{id: %d, name: %s, email: %s, phone: %s, perf: %s, time: %s}\n";
+char* order_format = "{id: %d, name: %s, email: %s, phone: %s, perf: %s, time: %s, done: %i}\n";
 
 pid_t pid;
 
@@ -44,6 +44,7 @@ struct order
     char phone[255];
     char perf[255];
     time_t time;
+    int done;
 };
 
 struct order interpret_line(char* line)
@@ -73,6 +74,9 @@ struct order interpret_line(char* line)
             break;
         case 5:
             result.time = time(NULL);
+            break;
+        case 6:
+            result.done = atoi(pt);
             break;
         }
         pt = strtok(NULL, ",");
@@ -135,8 +139,13 @@ struct order* filter(struct order* filter_obj, int* size, int here)
             {
                 matches_by_perf = 0;
             }
+            int matches_by_done = 1;
+            if (filter_obj->done >= 0 && filter_obj->done == a.done)
+            {
+                matches_by_done = 0;
+            }
 
-            if (matches_by_id != 1 || matches_by_name != 1 || matches_by_email != 1 || matches_by_phone != 1 || matches_by_perf != 1)
+            if (matches_by_id != 1 || matches_by_name != 1 || matches_by_email != 1 || matches_by_phone != 1 || matches_by_perf != 1 || matches_by_done != 1)
             {
                 match = 0;
             }
@@ -251,7 +260,11 @@ int update(struct order* filter_obj, struct order* update_obj)
                     {
                         a.perf[0] = update_obj->perf[0];
                     }
-                    fprintf(fptr2, "%d,%s,%s,%s,%s,%s}\n", a.id, a.name, a.email, a.phone, a.perf, ctime(&a.time));
+                    if (update_obj->done >= 0)
+                    {
+                        a.done = update_obj->done;
+                    }
+                    fprintf(fptr2, "%d,%s,%s,%s,%s,%s,%d}\n", a.id, a.name, a.email, a.phone, a.perf, ctime(&a.time), a.done);
                 }
             }
         }
@@ -270,7 +283,7 @@ int delete (struct order* filter_obj)
 void print_order(struct order* o)
 {
     printf("%i \t- ", pid);
-    printf(order_format, o->id, &o->name, &o->email, &o->phone, &o->perf, ctime(&o->time));
+    printf(order_format, o->id, &o->name, &o->email, &o->phone, &o->perf, ctime(&o->time), o->done);
 }
 
 char* str_order(struct order* o)

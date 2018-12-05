@@ -69,17 +69,19 @@ int read_from_pipe(int* target, int* pipe_desc)
 int company()
 {
 
-    int _c = -1;
-    //int* _count = &_c;
-    struct order* _result = filter(NULL, &_c, -1);
-    printf("%i\t- result count of all: %i\n", getpid(), _c);
+    int _total = -1;
+    struct order* _result = filter(NULL, &_total, -1);
+    printf("%i\t- result count of all: %i\n", getpid(), _total);
     int _i = 0;
-    /*
+
     // simulation of days:
     int current = 0;
-    while (current < _count || current < 100){ // hard limit in case of something messes up
+    while (current < _total && current < 100) // hard limit in case of something messes up
+    {
+        printf(C_CYAN "%i\t- " C_RED "DAY %i" C_CYAN " started!" C_RESET "\n", getpid(), current + 1);
 
-    }*/
+        current++;
+    }
 
     struct order* _r = &_result[2];
 
