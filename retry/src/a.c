@@ -61,7 +61,7 @@ int write_to_pipe(struct order* o, int* pipe_desc)
 int read_from_pipe(int* target)
 {
     printf(C_YELLOW "%i\t- Reading from pipe then unpausing parent." C_RESET "\n", getpid());
-    read(p[0], &target, sizeof(int));
+    read(p[0], target, sizeof(int));
     kill(getppid(), SIGUSR1); // unpause parent
     printf(C_YELLOW "%i\t- Read from pipe, got: %i" C_RESET "\n", getpid(), *target);
 }
@@ -88,14 +88,6 @@ int worker()
 
     int* target = malloc(sizeof(int));
 
-    // read_from_pipe(&buff);
-    //read_from_pipe(&buff);
-    printf(C_YELLOW "%i\t- Reading from pipe then unpausing parent." C_RESET "\n", getpid());
-    read(p[0], target, sizeof(int));
-    kill(getppid(), SIGUSR1); // unpause parent
-    printf(C_YELLOW "%i\t- Read from pipe, got: %i" C_RESET "\n", getpid(), *target);
-    printf(C_YELLOW "%i\t- Reading from pipe then unpausing parent." C_RESET "\n", getpid());
-    read(p[0], target, sizeof(int));
-    kill(getppid(), SIGUSR1); // unpause parent
-    printf(C_YELLOW "%i\t- Read from pipe, got: %i" C_RESET "\n", getpid(), *target);
+    read_from_pipe(target);
+    read_from_pipe(target);
 }
