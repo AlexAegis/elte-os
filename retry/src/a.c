@@ -1,17 +1,18 @@
 #include "a.h"
 
 int p[2]; // Pipe descriptor 0 read 1 write
-void handler(int sigNum)
+
+void handler(int signum)
 {
-    printf("%i\t- Handler called\n", getpid());
+    printf("%i\t- %i handler called\n", getpid(), signum);
 }
 
 int main(int argc, char* argv[])
 {
 
-    printf("%i\t-Main start %i\n", getpid(), MEMSIZE);
+    printf("%i\t- Main start %i\n", getpid(), MEMSIZE);
 
-    signal(SIGUSR1, handler);
+    signal(SIGUSR1, handler); // User defined signal
 
     if (pipe(p) == -1)
     {
@@ -27,23 +28,42 @@ int main(int argc, char* argv[])
     }
     if (pid > 0) // PARENT
     {
-        printf("%i\t-Parent start\n", getpid());
+        printf("%i\t- Parent start\n", getpid());
         company();
         close(p[0]);
         close(p[1]);
         wait(NULL);
-        printf("%i\t-Parent finished\n", getpid());
+        printf("%i\t- Parent finished\n", getpid());
     }
     else // CHILD
     {
-        printf("%i\t-Child start\n", getpid());
+        printf("%i\t- Child start\n", getpid());
         worker();
         close(p[0]);
         close(p[1]);
-        printf("%i\n- Child finished\n", getpid());
+        printf("%i\t- Child finished\n", getpid());
     }
 
     return 0;
+}
+
+int write_to_pipe(struct order* o, int* pipe_desc)
+{
+    printf(C_CYAN "%i\t- feladat fájlból kiolvasva: " C_RESET "\n", getpid());
+    print_order(o);
+    write(pipe_desc[1], &o->id, sizeof(int));
+    printf(C_CYAN "%i\t- task written into the pipe. Pausing..." C_RESET "\n", getpid());
+    pause();
+    printf(C_CYAN "%i\t- Unpaused" C_RESET "\n", getpid());
+    return 0;
+}
+
+int read_from_pipe(int* target)
+{
+    printf(C_YELLOW "%i\t- Reading from pipe then unpausing parent." C_RESET "\n", getpid());
+    read(p[0], &target, sizeof(int));
+    kill(getppid(), SIGUSR1); // unpause parent
+    printf(C_YELLOW "%i\t- Read from pipe, got: %i" C_RESET "\n", getpid(), *target);
 }
 
 int company()
@@ -56,16 +76,9 @@ int company()
     int _i = 0;
 
     struct order* _r = &_result[2];
-    printf("%i\t- feladat fájlból kiolvasva: \n", getpid());
-    print_order(_r);
-    write(p[1], &_r->id, sizeof(int));
-    pause();
-    _r = &_result[1];
-    print_order(_r);
 
-    write(p[1], &_r->id, sizeof(int));
-
-    printf("%i\t-Parent waiting for 1 children\n", getpid());
+    write_to_pipe(&_result[0], p);
+    write_to_pipe(&_result[1], p);
 
     return 0;
 }
@@ -73,19 +86,16 @@ int company()
 int worker()
 {
 
-    int buff;
+    int target;
 
-    printf("ge\n");
-    read(p[0], &buff, sizeof(int));
+    // read_from_pipe(&buff);
+    //read_from_pipe(&buff);
+    printf(C_YELLOW "%i\t- Reading from pipe then unpausing parent." C_RESET "\n", getpid());
+    read(p[0], &target, sizeof(int));
     kill(getppid(), SIGUSR1); // unpause parent
-    printf("ge\n");
-
-    printf("%i\t-Child got: %i\n", getpid(), buff);
-
-    //close(p[0]);
-
-    read(p[0], &buff, sizeof(int));
-    printf("ge\n");
-
-    printf("%i\t-Child got: %i\n", getpid(), buff);
+    printf(C_YELLOW "%i\t- Read from pipe, got: %i" C_RESET "\n", getpid(), target);
+    printf(C_YELLOW "%i\t- Reading from pipe then unpausing parent." C_RESET "\n", getpid());
+    read(p[0], &target, sizeof(int));
+    kill(getppid(), SIGUSR1); // unpause parent
+    printf(C_YELLOW "%i\t- Read from pipe, got: %i" C_RESET "\n", getpid(), target);
 }

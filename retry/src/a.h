@@ -18,11 +18,20 @@
 #define LENGTH(x) (sizeof(x) / sizeof((x)[0]))
 #define MEMSIZE 512
 
+#define C_RED "\x1b[31m"
+#define C_GREEN "\x1b[32m"
+#define C_YELLOW "\x1b[33m"
+#define C_BLUE "\x1b[34m"
+#define C_MAGENTA "\x1b[35m"
+#define C_CYAN "\x1b[36m"
+#define C_RESET "\x1b[0m"
+
 char* order_format = "{id: %d, name: %s, email: %s, phone: %s, perf: %s, time: %s}\n";
 
 pid_t pid;
 
 int main(int argc, char* argv[]);
+void handler(int signum);
 
 int worker();
 int company();
