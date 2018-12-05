@@ -70,9 +70,9 @@ int company()
 {
 
     int _c = -1;
-    int* _count = &_c;
-    struct order* _result = filter(NULL, _count, -1);
-    printf("%i\t- result count of all: %i\n", getpid(), *_count);
+    //int* _count = &_c;
+    struct order* _result = filter(NULL, &_c, -1);
+    printf("%i\t- result count of all: %i\n", getpid(), _c);
     int _i = 0;
     /*
     // simulation of days:
