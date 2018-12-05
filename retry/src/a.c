@@ -86,16 +86,16 @@ int company()
 int worker()
 {
 
-    int target;
+    int* target = malloc(sizeof(int));
 
     // read_from_pipe(&buff);
     //read_from_pipe(&buff);
     printf(C_YELLOW "%i\t- Reading from pipe then unpausing parent." C_RESET "\n", getpid());
-    read(p[0], &target, sizeof(int));
+    read(p[0], target, sizeof(int));
     kill(getppid(), SIGUSR1); // unpause parent
-    printf(C_YELLOW "%i\t- Read from pipe, got: %i" C_RESET "\n", getpid(), target);
+    printf(C_YELLOW "%i\t- Read from pipe, got: %i" C_RESET "\n", getpid(), *target);
     printf(C_YELLOW "%i\t- Reading from pipe then unpausing parent." C_RESET "\n", getpid());
-    read(p[0], &target, sizeof(int));
+    read(p[0], target, sizeof(int));
     kill(getppid(), SIGUSR1); // unpause parent
-    printf(C_YELLOW "%i\t- Read from pipe, got: %i" C_RESET "\n", getpid(), target);
+    printf(C_YELLOW "%i\t- Read from pipe, got: %i" C_RESET "\n", getpid(), *target);
 }
