@@ -17,6 +17,7 @@
 
 #define LENGTH(x) (sizeof(x) / sizeof((x)[0]))
 #define MEMSIZE 512
+#define WORKER_DAY_MAX 2
 
 #define C_RED "\x1b[31m"
 #define C_GREEN "\x1b[32m"
@@ -26,15 +27,17 @@
 #define C_CYAN "\x1b[36m"
 #define C_RESET "\x1b[0m"
 
-char* order_format = "{id: %d, name: %s, email: %s, phone: %s, perf: %s, time: %s, done: %i}\n";
+char* order_format = "{id: %i, name: %s, email: %s, phone: %s, perf: %i, time: %s, done: %i}\n";
 
 pid_t pid;
+struct order* all_orders; // only for the dispatch simulation
 
 int main(int argc, char* argv[]);
 void handler(int signum);
 
 int worker();
 int company();
+int dispatch_logic(int* current_task);
 
 struct order
 {
@@ -46,7 +49,11 @@ struct order
     time_t time;
     int done;
 };
-
+void print_order(struct order* o)
+{
+    printf("%i \t- ", pid);
+    printf(order_format, o->id, &o->name, &o->email, &o->phone, o->perf, ctime(&o->time), o->done);
+}
 struct order interpret_line(char* line)
 {
     struct order result;
@@ -73,7 +80,7 @@ struct order interpret_line(char* line)
             result.perf = atoi(pt);
             break;
         case 5:
-            result.time = time(NULL);
+            result.time = time(NULL); // TODO: Time reading not implemented
             break;
         case 6:
             result.done = atoi(pt);
@@ -104,7 +111,7 @@ struct order* filter(struct order* filter_obj, int* size, int here)
     *size = here;
     int found = 0;
 
-    //printf("seedddsg!\n");
+    // printf("seedddsg!\n");
     while ((read = getline(&line, &len, file)) != -1)
     {
         //printf("getline!\n");
@@ -114,39 +121,45 @@ struct order* filter(struct order* filter_obj, int* size, int here)
         {
 
             int matches_by_id = 1;
-            if (filter_obj->id >= 0 && filter_obj->id == a.id)
-
+            if (filter_obj->id >= 0 && filter_obj->id != a.id)
             {
+                //printf("matches_by_id = 0;!\n");
                 matches_by_id = 0;
             }
             int matches_by_name = 1;
             if (filter_obj->name[0] != '\0' && !strstr(a.name, filter_obj->name))
             {
+                //printf("matches_by_name = 0;!\n");
                 matches_by_name = 0;
             }
             int matches_by_email = 1;
             if (filter_obj->email[0] != '\0' && !strstr(a.email, filter_obj->email))
             {
+                // printf("matches_by_email = 0;!\n");
                 matches_by_email = 0;
             }
             int matches_by_phone = 1;
             if (filter_obj->phone[0] != '\0' && !strstr(a.phone, filter_obj->phone))
             {
+                //printf("matches_by_phone = 0;!\n");
                 matches_by_phone = 0;
             }
             int matches_by_perf = 1;
-            if (filter_obj->perf >= 0 && filter_obj->perf == a.perf)
+            if (filter_obj->perf >= 0 && filter_obj->perf != a.perf)
             {
+                //printf("matches_by_perf = 0;!\n");
                 matches_by_perf = 0;
             }
             int matches_by_done = 1;
-            if (filter_obj->done >= 0 && filter_obj->done == a.done)
+            if (filter_obj->done >= 0 && filter_obj->done != a.done)
             {
+                //printf("matches_by_done = 0;!\n");
                 matches_by_done = 0;
             }
 
             if (matches_by_id != 1 || matches_by_name != 1 || matches_by_email != 1 || matches_by_phone != 1 || matches_by_perf != 1 || matches_by_done != 1)
             {
+                //printf("match = 0;!\n");
                 match = 0;
             }
         }
@@ -156,7 +169,7 @@ struct order* filter(struct order* filter_obj, int* size, int here)
             {
                 res[found] = a;
             }
-
+            //printf(C_RED "I FOUND SOMETHING, ILL WRITE THIS TWICE!" C_RESET "\n");
             found = found + 1;
         }
     }
@@ -278,12 +291,6 @@ int update(struct order* filter_obj, struct order* update_obj)
 int delete (struct order* filter_obj)
 {
     return update(filter_obj, NULL);
-}
-
-void print_order(struct order* o)
-{
-    printf("%i \t- ", pid);
-    printf(order_format, o->id, &o->name, &o->email, &o->phone, &o->perf, ctime(&o->time), o->done);
 }
 
 char* str_order(struct order* o)
