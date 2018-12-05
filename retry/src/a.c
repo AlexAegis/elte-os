@@ -1,10 +1,19 @@
 #include "a.h"
 
 int p[2]; // Pipe descriptor 0 read 1 write
-
+int sighandler_num;
+// normal handler
 void handler(int signum)
 {
-    printf("%i\t- %i handler called\n", getpid(), signum);
+    printf(C_RED "%i\t- %i handler called" C_RESET "\n", getpid(), signum);
+}
+
+// info loaded handler
+static void handler_info(int sig, siginfo_t* si, void* ucontext)
+{
+    printf(C_RED "%i\t- handler called, got value: %i" C_RESET "\n", getpid(), si->si_value.sival_int);
+    sighandler_num = si->si_value.sival_int;
+    // si->si_value; /* This is what you're looking for. */
 }
 
 int main(int argc, char* argv[])
@@ -14,6 +23,13 @@ int main(int argc, char* argv[])
 
     signal(SIGUSR1, handler); // User defined signal
 
+    // INFO LOADED SIGNAL
+    struct sigaction sigact;
+
+    sigact.sa_sigaction = handler_info; //instead of sa_handler, we use the 3 parameter version
+    sigemptyset(&sigact.sa_mask);
+    sigact.sa_flags = SA_SIGINFO; //we need to set the siginfo flag
+    sigaction(SIGTERM, &sigact, NULL);
     company();
     /*
     if (pipe(p) == -1)
@@ -86,14 +102,14 @@ int company()
         if (left > 0)
         {
 
-            // CREATE A WORKER PROCESS
+            // CREATE A WORKER PROCESS, IF PID's ARE STORED IN AN ARRAY MAYBE MORE CAN BE STARTED
             if (pipe(p) == -1)
             {
                 perror("Hiba a pipe nyitaskor!\n");
                 exit(EXIT_FAILURE);
             }
             pid = fork();
-
+            printf("%i\t- " C_RED " FORK CALLED GETPID(): %i, GETPPID(): %i, PID: %i " C_RESET "\n", getpid(), getpid(), getppid(), pid);
             if (pid == -1)
             {
                 perror("Fork hiba\n");
@@ -151,27 +167,36 @@ int dispatch_logic(int* current_task)
 
     printf("%i\t- " C_CYAN " Found %i tasks with the same performance" C_RESET "\n", getpid(), _read_c);
 
+    //kill(pid, SIGUSR1);
+
+    union sigval s_value_int = { _read_c };
+    sleep(1);
+    sigqueue(pid, SIGTERM, s_value_int);
+
     while (_read_i < _read_c && _read_i < WORKER_DAY_MAX && _read_i < 1) // at most two, and at most what we found AND A HARD LIMIT REMOVE IT
     {
         write_to_pipe(&_read_result[_read_i], p);
         _read_i++;
     };
 
-    if (_read_i < 2)
-    { // if we only sent 1, pad the 2. out
-        printf("NO SECOND ONE \n");
-        pause();
-    }
+    wait(NULL);
     // DISPATCH LOGIC
 }
 
 int worker()
 {
-    sleep(1);
+    printf(C_YELLOW "%i\t- Waiting for task count " C_RESET "\n");
+    union sigval sv;
+    // catch the first signal which populates sighandler_num, number of orders to read
+    pause();
+    int count_read = 0;
+    while (count_read < sighandler_num && count_read < WORKER_DAY_MAX) // hard limit 2
+    {
+        int target;
+        read_from_pipe(&target, p);
 
-    int target;
+        count_read++;
+    }
 
-    read_from_pipe(&target, p);
-
-    read_from_pipe(&target, p);
+    return 0;
 }

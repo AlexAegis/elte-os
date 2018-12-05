@@ -30,6 +30,7 @@
 char* order_format = "{id: %i, name: %s, email: %s, phone: %s, perf: %i, time: %s, done: %i}\n";
 
 pid_t pid;
+
 struct order* all_orders; // only for the dispatch simulation
 
 int main(int argc, char* argv[]);
@@ -38,6 +39,13 @@ void handler(int signum);
 int worker();
 int company();
 int dispatch_logic(int* current_task);
+
+// used for signals with information
+/*union sigval
+{
+    int sival_int;
+    void* sival_ptr;
+};*/
 
 struct order
 {
