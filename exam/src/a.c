@@ -73,9 +73,6 @@ int leader()
     if (pid_a > 0) // PARENT
     {
 
-        close(p[0]);
-        close(p[1]);
-        wait(NULL);
         printf(C_CYAN "%i\t- Leader finished" C_RESET "\n", getpid());
 
         pid_b = fork();
