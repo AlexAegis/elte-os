@@ -316,7 +316,11 @@ int update(struct order* filter_obj, struct order* update_obj)
                         a.done = update_obj->done;
                     }
                     // printf("HEYYYYYY\n");
-                    fprintf(fptr2, "%i,%s,%s,%s,%i,%s,%i\n", a.id, a.name, a.email, a.phone, a.perf, ctime(&a.time), a.done);
+                    struct tm* localt = localtime(&a.time);
+                    char timestr[1000];
+                    strftime(timestr, 1000, "%c", localt);
+
+                    fprintf(fptr2, "%i,%s,%s,%s,%i,%s,%i\n", a.id, a.name, a.email, a.phone, a.perf, timestr, a.done);
                 }
             }
         }

@@ -150,6 +150,7 @@ int company()
 
 int dispatch_logic(int* current_task)
 {
+
     printf("%i\t- " C_CYAN " Task id is: %i is for performance: %i, and the current task index is: %i." C_RESET "\n", getpid(), all_orders[*current_task].id, all_orders[*current_task].perf, *current_task);
 
     struct order _perf_filter;
