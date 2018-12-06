@@ -13,7 +13,6 @@ static void handler_info(int sig, siginfo_t* si, void* ucontext)
 {
     printf(C_RED "%i\t- handler called, got value: %i" C_RESET "\n", getpid(), si->si_value.sival_int);
     sighandler_num = si->si_value.sival_int;
-    // si->si_value; /* This is what you're looking for. */
 }
 
 int main(int argc, char* argv[])
@@ -25,43 +24,12 @@ int main(int argc, char* argv[])
 
     // INFO LOADED SIGNAL
     struct sigaction sigact;
-
     sigact.sa_sigaction = handler_info; //instead of sa_handler, we use the 3 parameter version
     sigemptyset(&sigact.sa_mask);
     sigact.sa_flags = SA_SIGINFO; //we need to set the siginfo flag
     sigaction(SIGTERM, &sigact, NULL);
-    company();
-    /*
-    if (pipe(p) == -1)
-    {
-        perror("Hiba a pipe nyitaskor!\n");
-        exit(EXIT_FAILURE);
-    }
-    pid = fork();
 
-    if (pid == -1)
-    {
-        perror("Fork hiba\n");
-        exit(EXIT_FAILURE);
-    }
-    if (pid > 0) // PARENT
-    {
-        printf("%i\t- Parent start\n", getpid());
-        company();
-        close(p[0]);
-        close(p[1]);
-        wait(NULL);
-        printf("%i\t- Parent finished\n", getpid());
-    }
-    else // CHILD
-    {
-        printf("%i\t- Child start\n", getpid());
-        worker();
-        close(p[0]);
-        close(p[1]);
-        printf("%i\t- Child finished\n", getpid());
-    }
-*/
+    company();
     return 0;
 }
 
