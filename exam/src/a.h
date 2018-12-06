@@ -34,6 +34,7 @@ int main(int argc, char* argv[]);
 void handler(int signum);
 
 int leader();
+int game_logic();
 int player(int num);
 
 // used for signals with information

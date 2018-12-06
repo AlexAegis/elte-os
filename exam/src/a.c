@@ -1,6 +1,7 @@
 #include "a.h"
 
-int p[2]; // Pipe descriptor 0 read 1 write
+int p_a[2]; // Pipe descriptor 0 read 1 write
+int p_b[2]; // Pipe descriptor 0 read 1 write
 int sighandler_num;
 // normal handler
 void handler(int signum)
@@ -36,12 +37,12 @@ int main(int argc, char* argv[])
 
 int write_to_pipe(int num, int* pipe_desc)
 {
-    printf(C_CYAN "%i\t- feladat fájlból kiolvasva: " C_RESET "\n", getpid());
+    printf(C_YELLOW "%i\t- pipe write startól kiolvasva: " C_RESET "\n", getpid());
 
     write(pipe_desc[1], &num, sizeof(int));
-    printf(C_CYAN "%i\t- task written into the pipe. Pausing..." C_RESET "\n", getpid());
+    printf(C_YELLOW "%i\t- task written into the pipe. Pausing..." C_RESET "\n", getpid());
     pause();
-    printf(C_CYAN "%i\t- Unpaused" C_RESET "\n", getpid());
+    printf(C_YELLOW "%i\t- Unpaused" C_RESET "\n", getpid());
     return 0;
 }
 
@@ -58,7 +59,13 @@ int leader()
 
     printf("leader started\n");
 
-    if (pipe(p) == -1)
+    if (pipe(p_a) == -1)
+    {
+        perror("Hiba a pipe nyitaskor!\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if (pipe(p_b) == -1)
     {
         perror("Hiba a pipe nyitaskor!\n");
         exit(EXIT_FAILURE);
@@ -85,6 +92,8 @@ int leader()
         if (pid_b > 0) // PARENT
         {
             printf(C_CYAN "%i\t- Game leader innermost." C_RESET "\n");
+
+            game_logic();
             wait(NULL);
             wait(NULL);
             printf(C_CYAN "%i\t- Players finished. Shutting down.." C_RESET "\n");
@@ -92,22 +101,36 @@ int leader()
         else
         { // PLAYER 2
             player(2);
+            close(p_b[0]);
+            close(p_b[1]);
+            printf(C_YELLOW "%i\t- Player 2 finished" C_RESET "\n", getpid());
             exit(0);
         }
     }
     else // PLAYER 1
     {
         player(1);
-        close(p[0]);
-        close(p[1]);
-        printf(C_YELLOW "%i\t- Player finished" C_RESET "\n", getpid());
+        close(p_a[0]);
+        close(p_a[1]);
+        printf(C_YELLOW "%i\t- Player 1 finished" C_RESET "\n", getpid());
         exit(0);
     }
+    return 0;
+}
+
+int game_logic()
+{
+    printf("gamelogic start\n");
+    pause();
+    printf("gamelogic one player in\n");
+    pause();
+    printf("gamelogic two player in\n");
 }
 
 int player(int num)
 {
     printf("Player %i started \n", num);
     sleep(1);
-    exit(0);
+    kill(getppid(), SIGUSR1);
+    return 0;
 }
