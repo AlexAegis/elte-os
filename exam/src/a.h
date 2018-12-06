@@ -27,13 +27,14 @@
 #define C_CYAN "\x1b[36m"
 #define C_RESET "\x1b[0m"
 
-pid_t pid;
+pid_t pid_a;
+pid_t pid_b;
 
 int main(int argc, char* argv[]);
 void handler(int signum);
 
 int leader();
-int player();
+int player(int num);
 
 // used for signals with information
 /*union sigval

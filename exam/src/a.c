@@ -30,6 +30,7 @@ int main(int argc, char* argv[])
     sigaction(SIGTERM, &sigact, NULL);
 
     leader();
+
     return 0;
 }
 
@@ -54,9 +55,62 @@ int read_from_pipe(int* target, int* pipe_desc)
 
 int leader()
 {
+
     printf("leader started\n");
+
+    if (pipe(p) == -1)
+    {
+        perror("Hiba a pipe nyitaskor!\n");
+        exit(EXIT_FAILURE);
+    }
+    pid_a = fork();
+    printf("%i\t- " C_RED " FORK CALLED GETPID(): %i, GETPPID(): %i, PID_A: %i PID_B: %i" C_RESET "\n", getpid(), getpid(), getppid(), pid_a, pid_b);
+    if (pid_a == -1)
+    {
+        perror("Fork hiba\n");
+        exit(EXIT_FAILURE);
+    }
+    if (pid_a > 0) // PARENT
+    {
+
+        close(p[0]);
+        close(p[1]);
+        wait(NULL);
+        printf(C_CYAN "%i\t- Leader finished" C_RESET "\n", getpid());
+
+        pid_b = fork();
+        printf("%i\t- " C_RED " FORK CALLED GETPID(): %i, GETPPID(): %i, PID_A: %i, PID_B: %i " C_RESET "\n", getpid(), getpid(), getppid(), pid_a, pid_b);
+        if (pid_b == -1) // ERROR
+        {
+            perror("Fork hiba\n");
+            exit(EXIT_FAILURE);
+        }
+        if (pid_b > 0) // PARENT
+        {
+            printf(C_CYAN "%i\t- Game leader innermost." C_RESET "\n");
+            wait(NULL);
+            wait(NULL);
+            printf(C_CYAN "%i\t- Players finished. Shutting down.." C_RESET "\n");
+        }
+        else
+        { // PLAYER 2
+            player(2);
+            exit(0);
+        }
+    }
+    else // PLAYER 1
+    {
+        player(1);
+        close(p[0]);
+        close(p[1]);
+        printf(C_YELLOW "%i\t- Player finished" C_RESET "\n", getpid());
+        exit(0);
+    }
 }
 
-int player()
+int player(int num)
 {
+    printf("Player %i started \n", num);
+    sleep(1);
+    exit(0);
 }
