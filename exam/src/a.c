@@ -35,25 +35,6 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-int write_to_pipe(int num, int* pipe_desc)
-{
-    printf(C_YELLOW "%i\t- pipe write startól kiolvasva: " C_RESET "\n", getpid());
-
-    write(pipe_desc[1], &num, sizeof(int));
-    printf(C_YELLOW "%i\t- task written into the pipe. Pausing..." C_RESET "\n", getpid());
-    pause();
-    printf(C_YELLOW "%i\t- Unpaused" C_RESET "\n", getpid());
-    return 0;
-}
-
-int read_from_pipe(int* target, int* pipe_desc)
-{
-    printf(C_YELLOW "%i\t- Reading from pipe then unpausing parent." C_RESET "\n", getpid());
-    read(pipe_desc[0], target, sizeof(int));
-    kill(getppid(), SIGUSR1); // unpause parent
-    printf(C_YELLOW "%i\t- Read from pipe, got: %i" C_RESET "\n", getpid(), *target);
-}
-
 int leader()
 {
 
@@ -125,6 +106,16 @@ int game_logic()
     printf("gamelogic one player in\n");
     pause();
     printf("gamelogic two player in\n");
+    char name_buffer[5];
+    printf(C_YELLOW "%i\t- Reading from pipe then unpausing parent." C_RESET "\n", getpid());
+    read(p_a[0], &name_buffer, sizeof(char) * 5);
+    kill(pid_a, SIGUSR1); // unpause parent
+    printf(C_YELLOW "%i\t- Read from pipe, got: %s" C_RESET "\n", getpid(), name_buffer);
+
+    printf(C_YELLOW "%i\t- Reading from pipe then unpausing parent." C_RESET "\n", getpid());
+    read(p_b[0], &name_buffer, sizeof(char) * 5);
+    kill(pid_b, SIGUSR1); // unpause parent
+    printf(C_YELLOW "%i\t- Read from pipe, got: %s" C_RESET "\n", getpid(), name_buffer);
 }
 
 int player(int num)
@@ -132,5 +123,21 @@ int player(int num)
     printf("Player %i started \n", num);
     sleep(1);
     kill(getppid(), SIGUSR1);
+    char* name = "feri";
+
+    printf(C_YELLOW "%i\t- pipe write: " C_RESET "\n", getpid());
+    if (num == 1)
+    {
+        write(p_a[1], name, sizeof(char) * 5);
+    }
+    else
+    {
+        write(p_b[1], name, sizeof(char) * 5);
+    }
+
+    printf(C_YELLOW "%i\t- name %s written into the pipe. Pausing..." C_RESET "\n", getpid(), name);
+    pause();
+    printf(C_YELLOW "%i\t- Unpaused" C_RESET "\n", getpid());
+
     return 0;
 }
