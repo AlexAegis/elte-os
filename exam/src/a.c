@@ -1,5 +1,13 @@
 #include "a.h"
 
+char* names[] = {
+    "feri",
+    "zoli",
+    "maci",
+    "laci",
+    "peti"
+};
+
 int p_a[2]; // Pipe descriptor 0 read 1 write
 int p_b[2]; // Pipe descriptor 0 read 1 write
 int sighandler_num;
@@ -60,9 +68,6 @@ int leader()
     }
     if (pid_a > 0) // PARENT
     {
-
-        printf(C_CYAN "%i\t- Leader finished" C_RESET "\n", getpid());
-
         pid_b = fork();
         printf("%i\t- " C_RED " FORK CALLED GETPID(): %i, GETPPID(): %i, PID_A: %i, PID_B: %i " C_RESET "\n", getpid(), getpid(), getppid(), pid_a, pid_b);
         if (pid_b == -1) // ERROR
@@ -101,38 +106,54 @@ int leader()
 
 int game_logic()
 {
+
     printf("gamelogic start\n");
     pause();
     printf("gamelogic one player in\n");
     pause();
+    kill(pid_a, SIGUSR1);
+    kill(pid_b, SIGUSR1);
     printf("gamelogic two player in\n");
-    char name_buffer[5];
-    printf(C_YELLOW "%i\t- Reading from pipe then unpausing parent." C_RESET "\n", getpid());
-    read(p_a[0], &name_buffer, sizeof(char) * 5);
-    kill(pid_a, SIGUSR1); // unpause parent
-    printf(C_YELLOW "%i\t- Read from pipe, got: %s" C_RESET "\n", getpid(), name_buffer);
+    char* name_buffer = malloc(sizeof(char) * 10);
+    printf(C_CYAN "%i\t- Reading from pipe then unpausing parent." C_RESET "\n", getpid());
+    read(p_a[0], name_buffer, sizeof(char) * 5);
+    kill(pid_a, SIGUSR1); // unpause a
+    printf(C_CYAN "%i\t- Read from pipe, got: %s" C_RESET "\n", getpid(), name_buffer);
 
-    printf(C_YELLOW "%i\t- Reading from pipe then unpausing parent." C_RESET "\n", getpid());
-    read(p_b[0], &name_buffer, sizeof(char) * 5);
-    kill(pid_b, SIGUSR1); // unpause parent
-    printf(C_YELLOW "%i\t- Read from pipe, got: %s" C_RESET "\n", getpid(), name_buffer);
+    printf(C_CYAN "%i\t- Reading from pipe then unpausing parent." C_RESET "\n", getpid());
+    read(p_b[0], name_buffer, sizeof(char) * 5);
+    kill(pid_b, SIGUSR1); // unpause b
+    printf(C_CYAN "%i\t- Read from pipe, got: %s" C_RESET "\n", getpid(), name_buffer);
 }
 
 int player(int num)
 {
-    printf("Player %i started \n", num);
-    sleep(1);
-    kill(getppid(), SIGUSR1);
-    char* name = "feri";
+    printf(C_YELLOW "%i\t- Player %i started " C_RESET "\n", getpid(), num);
 
-    printf(C_YELLOW "%i\t- pipe write: " C_RESET "\n", getpid());
+    sleep(1);
+    printf(C_YELLOW "%i %i \t- slept 1: " C_RESET "\n", getpid(), num);
+
+    kill(getppid(), SIGUSR1);
+    pause();
+    printf(C_YELLOW "%i %i \t- killed parent: " C_RESET "\n", getpid(), num);
+    sleep(num);
+    // name select logic
+    srand(time(NULL) + num * 10000); // seeding
+    printf(C_YELLOW "%i %i \t- rand num: " C_RESET "\n", getpid(), num);
+    int random_number = rand() % 5 + 1;
+    char name[5];
+    printf(C_YELLOW "%i %i \t- str copy: " C_RESET "\n", getpid(), num);
+    strcpy(name, names[random_number]);
+
+    printf(C_YELLOW "%i %i\t- random number generated: %i" C_RESET "\n", getpid(), num, random_number);
+    printf(C_YELLOW "%i %i \t- pipe write: " C_RESET "\n", getpid(), num);
     if (num == 1)
     {
-        write(p_a[1], name, sizeof(char) * 5);
+        write(p_a[1], name, sizeof(name));
     }
     else
     {
-        write(p_b[1], name, sizeof(char) * 5);
+        write(p_b[1], name, sizeof(name));
     }
 
     printf(C_YELLOW "%i\t- name %s written into the pipe. Pausing..." C_RESET "\n", getpid(), name);
