@@ -150,7 +150,7 @@ int company()
 
 int dispatch_logic(int* current_task)
 {
-    printf("%i\t- " C_CYAN " Task id is: %i is for performance: %i" C_RESET "\n", getpid(), all_orders[*current_task].id, all_orders[*current_task].perf);
+    printf("%i\t- " C_CYAN " Task id is: %i is for performance: %i, and the current task index is: %i." C_RESET "\n", getpid(), all_orders[*current_task].id, all_orders[*current_task].perf, *current_task);
 
     struct order _perf_filter;
     _perf_filter.id = -1;
@@ -171,9 +171,11 @@ int dispatch_logic(int* current_task)
     union sigval s_value_int = { _read_c };
     sleep(1);
     sigqueue(pid, SIGTERM, s_value_int);
+    struct order* dispatched = malloc(2 * sizeof(struct order));
 
-    while (_read_i < _read_c && _read_i < WORKER_DAY_MAX && _read_i < 1) // at most two, and at most what we found AND A HARD LIMIT REMOVE IT
+    while (_read_i < _read_c && _read_i < WORKER_DAY_MAX) // at most two, and at most what we found
     {
+        dispatched[_read_i] = _read_result[_read_i];
         write_to_pipe(&_read_result[_read_i], p);
         _read_i++;
     };
@@ -185,6 +187,31 @@ int dispatch_logic(int* current_task)
     wait(NULL);
     printf("%i\t- " C_CYAN " Child finished!" C_RESET "\n", getpid(), _read_c);
     // DISPATCH LOGIC
+    // FINISH LOGIC
+    int _disp_i = 0;
+    while (_disp_i < _read_i)
+    {
+        printf("%i\t- " C_CYAN " Marking task as finished: %i" C_RESET "\n", getpid(), _read_c);
+        print_order(&dispatched[_disp_i]);
+
+        struct order _repl_obj;
+        _repl_obj.id = -1;
+        strcpy(_repl_obj.name, "");
+        strcpy(_repl_obj.email, "");
+        strcpy(_repl_obj.phone, "");
+        _repl_obj.perf = -1;
+        _repl_obj.done = 1;
+        printf("%i\t- " C_CYAN " Replace filter created: " C_RESET "\n", getpid());
+        print_order(&_repl_obj);
+
+        update(&dispatched[_disp_i], &_repl_obj);
+        printf("%i\t- " C_CYAN " MARKED AS DONE!" C_RESET "\n", getpid());
+        (*current_task)++;
+        _disp_i++;
+    }
+
+    printf("%i\t- " C_CYAN " Dispatch finished!" C_RESET "\n", getpid(), _read_c);
+    return 0;
 }
 
 int worker()

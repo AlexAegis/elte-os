@@ -57,6 +57,7 @@ struct order
     time_t time;
     int done;
 };
+
 void print_order(struct order* o)
 {
     printf("%i \t- ", pid);
@@ -103,7 +104,7 @@ struct order interpret_line(char* line)
 
 struct order* filter(struct order* filter_obj, int* size, int here)
 {
-    FILE* file = fopen("src/data.txt", "r");
+    FILE* file = fopen("data.txt", "r");
     char* line = NULL;
     size_t len = 0;
     ssize_t read;
@@ -235,21 +236,49 @@ int update(struct order* filter_obj, struct order* update_obj)
             {
 
                 int matches_by_id = 1;
-                if (filter_obj->id >= 0 && filter_obj->id == a.id)
+                if (filter_obj->id >= 0 && filter_obj->id != a.id)
                 {
+                    //printf("matches_by_id = 0;!\n");
                     matches_by_id = 0;
                 }
                 int matches_by_name = 1;
-                if (filter_obj->name[0] != '\0' && strcmp(filter_obj->name, a.name) != 0)
+                if (filter_obj->name[0] != '\0' && !strstr(a.name, filter_obj->name))
                 {
+                    //printf("matches_by_name = 0;!\n");
                     matches_by_name = 0;
                 }
-
-                if (matches_by_id != 1 || matches_by_name != 1)
+                int matches_by_email = 1;
+                if (filter_obj->email[0] != '\0' && !strstr(a.email, filter_obj->email))
                 {
+                    //printf("matches_by_email = 0;!\n");
+                    matches_by_email = 0;
+                }
+                int matches_by_phone = 1;
+                if (filter_obj->phone[0] != '\0' && !strstr(a.phone, filter_obj->phone))
+                {
+                    // printf("matches_by_phone = 0;!\n");
+                    matches_by_phone = 0;
+                }
+                int matches_by_perf = 1;
+                if (filter_obj->perf >= 0 && filter_obj->perf != a.perf)
+                {
+                    //printf("matches_by_perf = 0;!\n");
+                    matches_by_perf = 0;
+                }
+                int matches_by_done = 1;
+                if (filter_obj->done >= 0 && filter_obj->done != a.done)
+                {
+                    //printf("matches_by_done = 0;!\n");
+                    matches_by_done = 0;
+                }
+
+                if (matches_by_id != 1 || matches_by_name != 1 || matches_by_email != 1 || matches_by_phone != 1 || matches_by_perf != 1 || matches_by_done != 1)
+                {
+                    //printf("match = 0;!\n");
                     match = 0;
                 }
             }
+
             ctr++;
             if (match != 1)
             {
@@ -283,9 +312,11 @@ int update(struct order* filter_obj, struct order* update_obj)
                     }
                     if (update_obj->done >= 0)
                     {
+                        // printf("HEYYYYYY done\n");
                         a.done = update_obj->done;
                     }
-                    fprintf(fptr2, "%d,%s,%s,%s,%d,%s,%d}\n", a.id, a.name, a.email, a.phone, a.perf, ctime(&a.time), a.done);
+                    // printf("HEYYYYYY\n");
+                    fprintf(fptr2, "%i,%s,%s,%s,%i,%s,%i\n", a.id, a.name, a.email, a.phone, a.perf, ctime(&a.time), a.done);
                 }
             }
         }
