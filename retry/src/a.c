@@ -117,20 +117,21 @@ int company()
             }
             if (pid > 0) // PARENT - DISPATCH
             {
-                printf("%i\t- Dispatch start\n", getpid());
+                printf(C_CYAN "%i\t- Dispatch start" C_RESET "\n", getpid());
                 dispatch_logic(&current_task);
                 close(p[0]);
                 close(p[1]);
                 wait(NULL);
-                printf("%i\t- Dispatch finished\n", getpid());
+                printf(C_CYAN "%i\t- Dispatch finished" C_RESET "\n", getpid());
             }
             else // NEW WORKER THREAD
             {
-                printf("%i\t- Worker start\n", getpid());
+                printf(C_YELLOW "%i\t- Worker start" C_RESET "\n", getpid());
                 worker();
                 close(p[0]);
                 close(p[1]);
-                printf("%i\t- Worker finished\n", getpid());
+                printf(C_YELLOW "%i\t- Worker finished" C_RESET "\n", getpid());
+                exit(0);
             }
         }
         else
@@ -167,8 +168,6 @@ int dispatch_logic(int* current_task)
 
     printf("%i\t- " C_CYAN " Found %i tasks with the same performance" C_RESET "\n", getpid(), _read_c);
 
-    //kill(pid, SIGUSR1);
-
     union sigval s_value_int = { _read_c };
     sleep(1);
     sigqueue(pid, SIGTERM, s_value_int);
@@ -179,24 +178,32 @@ int dispatch_logic(int* current_task)
         _read_i++;
     };
 
+    // Tasks dispatched, waiting to them to complete;
+    printf("%i\t- " C_CYAN " Tasks dispatched, waiting to them to complete;" C_RESET "\n", getpid(), _read_c);
+    pause();
+    printf("%i\t- " C_CYAN " Tasks completed!" C_RESET "\n", getpid(), _read_c);
     wait(NULL);
+    printf("%i\t- " C_CYAN " Child finished!" C_RESET "\n", getpid(), _read_c);
     // DISPATCH LOGIC
 }
 
 int worker()
 {
-    printf(C_YELLOW "%i\t- Waiting for task count " C_RESET "\n");
+    printf(C_YELLOW "%i\t- Waiting for task count " C_RESET "\n", getpid());
     union sigval sv;
     // catch the first signal which populates sighandler_num, number of orders to read
     pause();
+    printf(C_YELLOW "%i\t- Task count to do: %i " C_RESET "\n", getpid(), sighandler_num);
     int count_read = 0;
     while (count_read < sighandler_num && count_read < WORKER_DAY_MAX) // hard limit 2
     {
         int target;
         read_from_pipe(&target, p);
-
         count_read++;
     }
-
+    printf(C_YELLOW "%i\t- Working..." C_RESET "\n", getpid());
+    sleep(1);
+    printf(C_YELLOW "%i\t- Done!" C_RESET "\n", getpid());
+    kill(getppid(), SIGUSR1);
     return 0;
 }
